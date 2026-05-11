@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Morning Briefing",
+  "schemaVersion": 1,
+  "description": "Tägliches Morgen-Briefing Dashboard für Daniel: KI-News, Datacenter/Infrastruktur-News (Dell, NVIDIA, Lenovo, IBM, NetApp, Veeam, HPE, Everpure), deutsche Wirtschaft/Mittelstand, sowie Börsencharts für CANCOM, NVIDIA, Invesco NASDAQ-100, Invesco MSCI World, iShares Clean Energy, Amundi DAX 3x und MSCI Europe.",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Morgen-Briefing</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root {
+  color-scheme: light;
+  --bg:        #f0f4f8;
+  --surface:   #ffffff;
+  --border:    #e2e8f0;
+  --accent:    #2563eb;
+  --accent-lt: #eff6ff;
+  --green:     #16a34a;
+  --red:       #dc2626;
+  --text:      #1e293b;
+  --muted:     #64748b;
+  --shadow:    0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:13px;line-height:1.5;padding:16px}
+
+/* ── Header ──────────────────────────────────── */
+.header{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;box-shadow:var(--shadow)}
+.header h1{font-size:1.18rem;font-weight:700;letter-spacing:-.02em}
+.header .date{color:var(--muted);font-size:.77rem;margin-top:2px}
+.header .meta{color:var(--muted);font-size:.73rem;text-align:right;line-height:1.6}
+
+/* ── Section label ───────────────────────────── */
+.sec{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── News grid ───────────────────────────────── */
+.news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:var(--shadow);min-height:200px;display:flex;flex-direction:column}
+.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+
+/* ── Loading ─────────────────────────────────── */
+.loading{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.8rem;padding:12px 0;flex:1}
+.spinner{width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Bullets ─────────────────────────────────── */
+.bullets{list-style:none;display:flex;flex-direction:column;gap:6px;flex:1}
+.bullets li{font-size:.79rem;line-height:1.5;color:#334155;padding-left:13px;position:relative}
+.bullets li::before{content:'›';position:absolute;left:0;color:var(--accent);font-weight:700}
+
+/* ── Sources ─────────────────────────────────── */
+.sources{margin-top:10px;padding-top:9px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
+.src-link{font-size:.7rem;color:var(--muted);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s}
+.src-link:hover{color:var(--accent)}
+
+/* ── Info note ───────────────────────────────── */
+.info-note{background:var(--accent-lt);border:1px solid #bfdbfe;border-radius:7px;padding:7px 10px;font-size:.71rem;color:#1e40af;margin-top:8px}
+
+/* ── Stocks ──────────────────────────────────── */
+.stocks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.stock-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 12px 10px;box-shadow:var(--shadow)}
+.s-sym{font-size:.59rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.s-name{font-size:.72rem;font-weight:600;color:var(--text);line-height:1.3;margin:3px 0 8px;min-height:28px}
+.s-price{font-size:1rem;font-weight:700;letter-spacing:-.02em}
+.s-chg{font-size:.7rem;font-weight:600;margin:1px 0 7px}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.chart-box{height:52px}
+.s-err{font-size:.71rem;color:var(--muted);font-style:italic;padding:6px 0}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>☀️ Guten Morgen, Daniel</h1>
+    <div class="date" id="hdate"></div>
+  </div>
+  <div class="meta" id="hmeta">Lade Daten …</div>
+</div>
+
+<!-- News -->
+<div class="sec">📰 Nachrichten-Briefing</div>
+<div class="news-grid">
+  <div class="card">
+    <div class="card-title">🤖 KI &amp; Modelle</div>
+    <div id="ai-body"><div class="loading"><div class="spinner"></div>Suche KI-News …</div></div>
+    <div id="ai-src"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🏢 Datacenter &amp; Infrastruktur</div>
+    <div id="dc-body"><div class="loading"><div class="spinner"></div>Lade Datacenter-News …</div></div>
+    <div id="dc-src"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🇩🇪 Deutsche Wirtschaft</div>
+    <div id="eco-body"><div class="loading"><div class="spinner"></div>Lade Wirtschaftsnews …</div></div>
+    <div id="eco-src"></div>
+  </div>
+</div>
+
+<!-- Stocks -->
+<div class="sec">📈 Börsenübersicht</div>
+<div class="stocks-grid" id="sgrid"></div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────
+const STOCKS = [
+  { name:'CANCOM SE',           ticker:'CAN.DE',  sym:'CAN'  },
+  { name:'NVIDIA',              ticker:'NVDA',    sym:'NVDA' },
+  { name:'Invesco NASDAQ-100',  ticker:'EQQQ.DE', sym:'EQQQ' },
+  { name:'Invesco MSCI World',  ticker:'MXWO.DE', sym:'MXWO' },
+  { name:'iSh. Clean Energy',   ticker:'IQQH.DE', sym:'IQQH' },
+  { name:'Amundi DAX 3×',       ticker:'3DAL.DE', sym:'3DAL' },
+  { name:'MSCI Europe',         ticker:'SMEA.PA', sym:'SMEA' },
+];
+
+const FEEDS = {
+  ai:  ['https://venturebeat.com/category/ai/feed/',
+        'https://techcrunch.com/category/artificial-intelligence/feed/',
+        'https://the-decoder.de/feed/'],
+  dc:  ['https://www.theregister.com/data_centre/rss',
+        'https://blocksandfiles.com/feed/',
+        'https://www.crn.com/rss/news.rss'],
+  eco: ['https://www.handelsblatt.com/contentexport/feed/top-themen',
+        'https://www.wiwo.de/rss/feed',
+        'https://www.manager-magazin.de/all.rss'],
+};
+
+// ── Date header ──────────────────────────────────────────────────────
+const NOW = new Date();
+document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
+  {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── RSS helpers ──────────────────────────────────────────────────────
+async function getRSS(url) {
+  try {
+    const r = await fetch(
+      'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(url) + '&count=20',
+      {signal: AbortSignal.timeout(9000)}
+    );
+    const d = await r.json();
+    return d.status === 'ok' ? (d.items || []) : [];
+  } catch { return []; }
+}
+
+async function getAllFeeds(urls) {
+  const chunks = await Promise.all(urls.map(getRSS));
+  const all    = chunks.flat();
+  const cutoff = Date.now() - 48 * 3600 * 1000;
+  const recent = all.filter(a => { try{return new Date(a.pubDate)>cutoff}catch{return false} });
+  const pool   = recent.length >= 4 ? recent : all;
+  const seen   = new Set();
+  return pool.filter(a => {
+    const k = (a.title||'').toLowerCase().slice(0,40);
+    if (seen.has(k)) return false; seen.add(k); return true;
+  }).slice(0,20);
+}
+
+// ── Render helpers ───────────────────────────────────────────────────
+function extractText(val) {
+  if (typeof val === 'string') return val;
+  if (!val) return '';
+  // askClaude may return an object – try common field names
+  if (typeof val.text    === 'string') return val.text;
+  if (typeof val.content === 'string') return val.content;
+  if (typeof val.message === 'string') return val.message;
+  if (Array.isArray(val.content)) {
+    return val.content.map(b => b.text || b.content || '').join('\n');
+  }
+  return JSON.stringify(val);
+}
+
+function renderBullets(raw) {
+  const text = extractText(raw);
+  const lines = text.split('\n')
+    .map(l => l.replace(/^[\-\*•·]\s*/,'').trim())
+    .filter(l => l.length > 10)
+    .slice(0,7);
+  if (!lines.length) return `<p style="color:var(--muted);font-size:.8rem">${text}</p>`;
+  return `<ul class="bullets">${lines.map(l=>`<li>${l}</li>`).join('')}</ul>`;
+}
+
+// ── News loader ──────────────────────────────────────────────────────
+function buildData(items, count, descLen) {
+  return items.slice(0, count).map(a => ({
+    title: a.title || '',
+    desc:  (a.description||'').replace(/<[^>]+>/g,'').slice(0, descLen),
+    url:   a.link  || '',
+  }));
+}
+
+async function askWithFallback(prompt, data) {
+  // Try with given data; if it fails, retry with only titles (smaller payload)
+  try {
+    const r = await window.cowork.askClaude(prompt, data);
+    const t = extractText(r);
+    if (t && !t.toLowerCase().includes('inference did not complete')) return t;
+    throw new Error('incomplete');
+  } catch {
+    // Retry with just titles – much smaller payload
+    const tiny = data.map(a => ({ title: a.title }));
+    const r2 = await window.cowork.askClaude(prompt, tiny);
+    return extractText(r2);
+  }
+}
+
+async function loadNews(urls, bodyId, srcId, rssPmt, fallPmt) {
+  try {
+    const items = await getAllFeeds(urls);
+    let summary, fromRSS = items.length > 0;
+
+    if (fromRSS) {
+      // Start lean: 6 articles, short descriptions
+      const data = buildData(items, 6, 80);
+      summary = await askWithFallback(rssPmt, data);
+
+      const srcEl = document.getElementById(srcId);
+      srcEl.innerHTML = `<div class="sources">${
+        data.slice(0,4).map(a =>
+          `<a class="src-link" href="${a.url}" target="_blank" rel="noopener">↗ ${
+            a.title.slice(0,65)}${a.title.length>65?'…':''}</a>`
+        ).join('')
+      }</div>`;
+    } else {
+      summary = await window.cowork.askClaude(fallPmt, []).then(extractText);
+    }
+
+    let html = renderBullets(summary);
+    if (!fromRSS) {
+      html += `<div class="info-note">ℹ️ Live-Quellen nicht erreichbar – Inhalte basieren auf Modell-Wissen. Für Echtzeit-News einen News-Connector hinzufügen.</div>`;
+    }
+    document.getElementById(bodyId).innerHTML = html;
+  } catch(e) {
+    document.getElementById(bodyId).innerHTML =
+      `<p style="color:var(--muted);font-size:.8rem">Fehler: ${e.message}</p>`;
+  }
+}
+
+// ── Stock loader ─────────────────────────────────────────────────────
+async function fetchStock(ticker) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=5m&range=1d&includePrePost=false`;
+  const r   = await fetch(url, {signal:AbortSignal.timeout(10000), headers:{Accept:'application/json'}});
+  const j   = await r.json();
+  const res = j?.chart?.result?.[0];
+  if (!res) throw new Error('keine Daten');
+  const meta   = res.meta;
+  const raw    = res.indicators?.quote?.[0]?.close || [];
+  let last = null;
+  const closes = raw.map(v => { if(v!=null) last=v; return last; });
+  return {
+    price:    meta.regularMarketPrice,
+    prev:     meta.chartPreviousClose ?? meta.previousClose,
+    currency: meta.currency || '',
+    ts:       res.timestamp || [],
+    closes,
+  };
+}
+
+function drawChart(canvasId, closes, isPos) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  const col = isPos ? '#16a34a' : '#dc2626';
+  new Chart(el, {
+    type: 'line',
+    data: {
+      labels: closes.map((_,i)=>i),
+      datasets:[{
+        data: closes, borderColor: col, borderWidth: 1.5,
+        fill: true, backgroundColor: col+'1a',
+        pointRadius: 0, tension: 0.4,
+      }],
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false}, tooltip:{enabled:false}},
+      scales:{x:{display:false}, y:{display:false}},
+    },
+  });
+}
+
+async function loadStocks() {
+  const grid = document.getElementById('sgrid');
+
+  for (const s of STOCKS) {
+    const id  = 'sc_' + s.ticker.replace(/[^a-z0-9]/gi,'_');
+    const div = document.createElement('div');
+    div.className = 'stock-card'; div.id = id;
+    div.innerHTML = `<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="loading"><div class="spinner"></div></div>`;
+    grid.appendChild(div);
+  }
+
+  await Promise.all(STOCKS.map(async s => {
+    const sid  = 'sc_' + s.ticker.replace(/[^a-z0-9]/gi,'_');
+    const cid  = 'cv_' + s.ticker.replace(/[^a-z0-9]/gi,'_');
+    const card = document.getElementById(sid);
+    try {
+      const d   = await fetchStock(s.ticker);
+      const chg = d.prev ? (d.price - d.prev) / d.prev * 100 : 0;
+      const pos = chg >= 0;
+      const fmt = v => v != null ? v.toFixed(2) : '–';
+      card.innerHTML = `
+        <div class="s-sym">${s.sym}</div>
+        <div class="s-name">${s.name}</div>
+        <div class="s-price">${d.currency} ${fmt(d.price)}</div>
+        <div class="s-chg ${pos?'pos':'neg'}">${pos?'▲':'▼'} ${Math.abs(chg).toFixed(2)} %</div>
+        <div class="chart-box"><canvas id="${cid}"></canvas></div>`;
+      requestAnimationFrame(() => drawChart(cid, d.closes.filter(v=>v!=null), pos));
+    } catch {
+      card.innerHTML = `<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="s-err">Live-Daten nicht verfügbar</div>`;
+    }
+  }));
+}
+
+// ── Prompts ──────────────────────────────────────────────────────────
+const P = {
+  ai:    `Du bist ein KI-Analyst. Fasse die wichtigsten KI-Ereignisse aus den folgenden Artikeln in 5–6 prägnanten deutschen Bulletpoints zusammen. Fokus: neue Modelle, Firmenankündigungen (OpenAI, Anthropic, Google, Meta, Mistral, xAI etc.), Forschungsdurchbrüche. Nur Bulletpoints, jeder beginnt mit -.`,
+  aiFB:  `Du bist ein KI-Analyst. Erstelle ein kurzes deutsches Briefing (5–6 Bulletpoints) über die wichtigsten aktuellen Trends im Bereich Künstliche Intelligenz. Fokus: neueste Modelle, Unternehmensstrategien, technologische Entwicklungen. Jeder Punkt beginnt mit -.`,
+  dc:    `Du bist ein IT-Infrastruktur-Analyst. Fasse die wichtigsten Datacenter/Infrastruktur-News aus diesen Artikeln in 5–6 deutschen Bulletpoints zusammen. Besonders relevant: Dell, NVIDIA, Lenovo, IBM, NetApp, Veeam, HPE, Everpure. Jeder Punkt beginnt mit -.`,
+  dcFB:  `Du bist ein IT-Infrastruktur-Analyst. Erstelle ein kurzes deutsches Briefing (5–6 Bulletpoints) über die wichtigsten Entwicklungen im Bereich Rechenzentrumsinfrastruktur. Fokus: Dell, NVIDIA, Lenovo, IBM, NetApp, Veeam, HPE, Everpure und Markttrends. Jeder Punkt beginnt mit -.`,
+  eco:   `Du bist ein Wirtschaftsanalyst. Fasse die wichtigsten deutschen Wirtschaftsnews aus diesen Artikeln in 5–6 Bulletpoints zusammen. Fokus: deutscher Mittelstand, IT-Investitionen, KI-Beschaffung, Digitalisierung. Jeder Punkt beginnt mit -.`,
+  ecoFB: `Du bist ein Wirtschaftsanalyst. Erstelle ein kurzes deutsches Briefing (5–6 Bulletpoints) über die aktuellen Entwicklungen im deutschen Mittelstand. Fokus: IT-Investitionen, Digitalisierung, KI-Adoption, wirtschaftliche Lage. Jeder Punkt beginnt mit -.`,
+};
+
+// ── Run all ──────────────────────────────────────────────────────────
+const t0 = Date.now();
+Promise.all([
+  loadNews(FEEDS.ai,  'ai-body',  'ai-src',  P.ai,  P.aiFB),
+  loadNews(FEEDS.dc,  'dc-body',  'dc-src',  P.dc,  P.dcFB),
+  loadNews(FEEDS.eco, 'eco-body', 'eco-src', P.eco, P.ecoFB),
+  loadStocks(),
+]).then(() => {
+  const s = ((Date.now()-t0)/1000).toFixed(1);
+  document.getElementById('hmeta').textContent =
+    'Aktualisiert: ' + NOW.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' · ' + s + 's';
+});
+</script>
+</body>
+</html>
