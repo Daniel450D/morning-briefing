@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Morning Briefing",
+  "schemaVersion": 1,
+  "description": "Tägliches Morgen-Briefing Dashboard für Daniel: KI-News, Datacenter/Infrastruktur-News (Dell, NVIDIA, Lenovo, IBM, NetApp, Veeam, HPE, Everpure), deutsche Wirtschaft/Mittelstand, sowie Börsencharts für CANCOM, NVIDIA, Invesco NASDAQ-100, Invesco MSCI World, iShares Clean Energy, Amundi DAX 3x und MSCI Europe.",
+  "mcpTools": [
+    "mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__quote",
+    "mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__chart"
+  ],
+  "mcpServerNames": [
+    "FMP",
+    "FMP"
+  ]
+}
+</script>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Morgen-Briefing</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:      #0d1117;
+  --surface: #161b22;
+  --card:    #1c2128;
+  --border:  #30363d;
+  --accent:  #58a6ff;
+  --accent2: #1f3a6e;
+  --green:   #3fb950;
+  --red:     #f85149;
+  --text:    #e6edf3;
+  --sub:     #8b949e;
+  --shadow:  0 2px 8px rgba(0,0,0,.45);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; font-size:13px; line-height:1.5; padding:16px; min-height:100vh }
+::-webkit-scrollbar { width:5px } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px }
+
+/* Header */
+.header { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; box-shadow:var(--shadow) }
+.header h1 { font-size:1.2rem; font-weight:700; letter-spacing:-.02em }
+.header .date { color:var(--sub); font-size:.77rem; margin-top:2px }
+.header .meta { color:var(--sub); font-size:.72rem; text-align:right; line-height:1.6 }
+
+/* Section */
+.sec { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:14px 0 8px; display:flex; align-items:center; gap:8px }
+.sec::after { content:''; flex:1; height:1px; background:var(--border) }
+
+/* News */
+.news-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px }
+.news-card { background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); display:flex; flex-direction:column; height:300px }
+.news-head { padding:12px 14px 0; flex-shrink:0 }
+.card-title { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); margin-bottom:8px }
+.news-scroll { flex:1; overflow-y:auto; padding:0 14px 12px; min-height:0 }
+
+/* News items */
+.news-item { padding:8px 0; border-bottom:1px solid var(--border) }
+.news-item:last-child { border-bottom:none }
+.news-item a { color:var(--text); text-decoration:none; font-size:.79rem; line-height:1.45; display:block; font-weight:500 }
+.news-item a:hover { color:var(--accent) }
+.news-item .source { font-size:.68rem; color:var(--sub); margin-top:2px }
+.news-updated { font-size:.68rem; color:var(--sub); margin-top:10px; padding-top:8px; border-top:1px solid var(--border) }
+
+/* Loading */
+.loading { display:flex; align-items:center; gap:7px; color:var(--sub); font-size:.8rem; padding:20px 0 }
+.spinner { width:13px; height:13px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0 }
+@keyframes spin { to { transform:rotate(360deg) } }
+
+/* Info note */
+.info-note { background:var(--accent2); border:1px solid #1f3a6e; border-radius:6px; padding:6px 10px; font-size:.69rem; color:#79c0ff; margin-top:10px }
+
+/* Stocks */
+.stocks-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:10px }
+.stock-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 13px 11px; box-shadow:var(--shadow) }
+.s-sym  { font-size:.59rem; font-weight:600; color:var(--sub); text-transform:uppercase; letter-spacing:.06em }
+.s-name { font-size:.72rem; font-weight:600; color:var(--text); line-height:1.3; margin:3px 0 8px; min-height:28px }
+.s-price { font-size:1rem; font-weight:700; letter-spacing:-.02em }
+.s-chg  { font-size:.7rem; font-weight:600; margin:2px 0 8px }
+.pos { color:var(--green) } .neg { color:var(--red) }
+.chart-box { height:52px }
+.s-note { font-size:.67rem; color:var(--sub); background:#0d1117; border:1px solid var(--border); border-radius:5px; padding:5px 7px; margin-top:4px; line-height:1.4 }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>☀️ Guten Morgen, Daniel</h1>
+    <div class="date" id="hdate"></div>
+  </div>
+  <div class="meta" id="hmeta">Lade Kursdaten …</div>
+</div>
+
+<!-- NEWS (pre-fetched by scheduled task – täglich 06:00 Uhr aktualisiert) -->
+<!-- NEWS_DATA_START -->
+<script>
+const NEWS_DATA = {
+  "generated": "2026-05-11",
+  "ai": {
+    "title": "🤖 KI & Modelle",
+    "items": [
+      {"text": "Anthropic Claude Mythos Preview: Bestehende Benchmark-Tests können das Modell kaum noch messen – nur 5 von 228 Aufgaben decken den relevanten Fähigkeitsbereich ab", "source": "heise.de", "url": "https://www.heise.de/thema/Kuenstliche-Intelligenz"},
+      {"text": "OpenAI bringt drei neue Audio-Modelle: GPT-Realtime-2 für Echtzeit-Gespräche, Translate und Whisper für Live-Transkription – GPT-5.5 kostet bis zu 92% mehr als der Vorgänger", "source": "heise.de", "url": "https://www.heise.de/news/KI-Update-kompakt-CES-2026-Grok-Deepfakes-OpenAI-Audio-KI-KI-Pruefungen-11129109.html"},
+      {"text": "Meta präsentiert Muse Spark: Neues KI-Modell als Antwort auf wachsende Konkurrenz nach Milliarden-Investitionen in Superintelligence Labs", "source": "heise.de", "url": "https://www.heise.de/en/news/Muse-Spark-Meta-presents-new-AI-model-11249683.html"},
+      {"text": "Atlassian Team '26: Neue KI-Agenten planen und führen Aufgaben eigenständig aus – Teamwork Graph als KI-Backbone", "source": "the-decoder.de", "url": "https://the-decoder.de/"},
+      {"text": "KI-Barometer 2026: Jeder vierte Betrieb nutzt KI aktiv, aber 94% der Unternehmen scheitern bei der praktischen Umsetzung – meist aus strukturellen Gründen", "source": "heise.de", "url": "https://www.heise.de/news/KI-Barometer-2026-Wie-Unternehmen-KI-heute-tatsaechlich-einsetzen-11266671.html"},
+      {"text": "Gartner Technologieausblick 2026: KI dominiert alle strategischen Technologietrends – Fokus auf Agentik und multimodale Systeme", "source": "heise.de", "url": "https://www.heise.de/en/news/AI-Dominates-Gartner-s-Technology-Outlook-for-2026-10811245.html"}
+    ]
+  },
+  "dc": {
+    "title": "🏢 Datacenter & Infrastruktur",
+    "items": [
+      {"text": "HPE x NVIDIA GTC 2026: HPE erweitert KI-Infrastruktur von Enterprise bis Exascale – neue Systeme mit RTX-PRO-GPUs und Blackwell/Rubin-Architektur, Lieferung Q2 2026", "source": "computerweekly.com", "url": "https://www.computerweekly.com/de/news/366640477/HPE-erweitert-KI-Infrastruktur-von-Enterprise-bis-Exascale"},
+      {"text": "Dell AI-Lineup: PowerEdge XE8712 Server weltweit verfügbar, AI-Workload-Blueprints in Tech Preview, PowerScale mit parallel NFS-Support 2026", "source": "theregister.com", "url": "https://www.theregister.com/2025/11/17/dell_ai_lineup/"},
+      {"text": "Servermarkt wächst um 61%: KI-Hardware dominiert Rechenzentren – Dell Technologies führt mit 9,3 Mrd. Dollar Umsatz und 37,2% Wachstum", "source": "heise.de", "url": "https://www.heise.de/en/news/Server-market-grows-by-61-percent-AI-hardware-dominates-data-centers-11119415.html"},
+      {"text": "Dell entwirft neue Datacenter-Architektur: Fokus auf Nachhaltigkeit, Modularität und KI-optimierte Infrastruktur für 2026", "source": "computerweekly.com", "url": "https://www.computerweekly.com/de/feature/Data-Center-der-Zukunft-Dell-entwirft-neue-Architektur"},
+      {"text": "Marktprognosen: Analysten erwarten weiterhin 30–40% Wachstum für KI-Infrastruktur in 2026 – NVIDIA Blackwell als Haupttreiber", "source": "computerweekly.com", "url": "https://www.computerweekly.com/de/news/Data-Center-Infrastruktur"}
+    ]
+  },
+  "eco": {
+    "title": "🇩🇪 Deutsche Wirtschaft",
+    "items": [
+      {"text": "WirtschaftsWoche Konferenz 'KI im Mittelstand' (19.–20. Mai 2026, Düsseldorf): Fokus auf KI-Potenziale und Skalierung für Mittelstand und Familienunternehmen", "source": "handelsblatt.com", "url": "https://live.handelsblatt.com/event/wirtschaftswoche-ki-im-mittelstand/"},
+      {"text": "Studie: Mittelstand investiert weniger in KI – Ausgaben rund 30% unter Gesamtmarkt; geopolitische Unsicherheit und Kostenoptimierung als Hauptgründe", "source": "wiwo.de", "url": "https://www.wiwo.de/unternehmen/it/ki-mittelstand-bremst-bei-kuenstlicher-intelligenz-ruecklaeufige-investitionen/100189304.html"},
+      {"text": "Handelsblatt: KI-Ausgaben steigen 2026 global auf 2,5 Billionen Dollar – Deutschland droht den Anschluss zu verlieren", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/technik/kuenstliche-intelligenz-ki-ausgaben-steigen-2026-auf-25-billionen-dollar/100191851.html"},
+      {"text": "Digitale Transformation: 94% der Unternehmen scheitern in der Umsetzung – Strukturelle statt technische Hürden als Hauptproblem im deutschen Mittelstand", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/unternehmen/mittelstand/studie-mittelstand-investiert-weniger-in-ki-kostenoptimierung-im-fokus/100189594.html"},
+      {"text": "Innovation: Künstliche Intelligenz zieht in die Unternehmen ein – trotz Investitionsrückgang nutzt bereits jeder vierte Betrieb KI produktiv", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/politik/deutschland/innovation-kuenstliche-intelligenz-zieht-in-die-unternehmen-ein/100191109.html"}
+    ]
+  }
+};
+</script>
+<!-- NEWS_DATA_END -->
+
+<div class="sec">📰 Nachrichten-Briefing</div>
+<div class="news-grid">
+  <div class="news-card">
+    <div class="news-head"><div class="card-title" id="title-ai"></div></div>
+    <div class="news-scroll" id="body-ai"></div>
+  </div>
+  <div class="news-card">
+    <div class="news-head"><div class="card-title" id="title-dc"></div></div>
+    <div class="news-scroll" id="body-dc"></div>
+  </div>
+  <div class="news-card">
+    <div class="news-head"><div class="card-title" id="title-eco"></div></div>
+    <div class="news-scroll" id="body-eco"></div>
+  </div>
+</div>
+
+<div class="sec">📈 Börsenübersicht</div>
+<div class="stocks-grid" id="sgrid"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────
+const T_QUOTE = 'mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__quote';
+const T_CHART = 'mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__chart';
+
+const STOCKS = [
+  { name:'CANCOM SE',           sym:'CAN',  fmp:'CAN.DE',  eu:true  },
+  { name:'NVIDIA',              sym:'NVDA', fmp:'NVDA',    eu:false },
+  { name:'Invesco NASDAQ-100',  sym:'EQQQ', fmp:'EQQQ.DE', eu:true  },
+  { name:'Invesco MSCI World',  sym:'MXWO', fmp:'MXWO.DE', eu:true  },
+  { name:'iSh. Clean Energy',   sym:'IQQH', fmp:'IQQH.DE', eu:true  },
+  { name:'Amundi DAX 3×',       sym:'3DAL', fmp:'3DAL.DE', eu:true  },
+  { name:'MSCI Europe',         sym:'SMEA', fmp:'SMEA.PA', eu:true  },
+];
+
+// ── Date ──────────────────────────────────────────────────────────────
+const NOW = new Date();
+document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
+  {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── Render News ───────────────────────────────────────────────────────
+function renderNews() {
+  const keys = [
+    { key:'ai',  title:'title-ai',  body:'body-ai'  },
+    { key:'dc',  title:'title-dc',  body:'body-dc'  },
+    { key:'eco', title:'title-eco', body:'body-eco' },
+  ];
+
+  for (const {key, title, body} of keys) {
+    const section = NEWS_DATA[key];
+    document.getElementById(title).textContent = section.title;
+
+    const items = section.items.map(item => `
+      <div class="news-item">
+        <a href="${item.url}" target="_blank" rel="noopener">${item.text}</a>
+        <div class="source">↗ ${item.source}</div>
+      </div>`).join('');
+
+    const age = NEWS_DATA.generated === new Date().toISOString().slice(0,10)
+      ? 'heute aktualisiert' : `Stand: ${NEWS_DATA.generated}`;
+
+    document.getElementById(body).innerHTML =
+      items + `<div class="news-updated">🔄 ${age} · automatisch via WebSearch</div>`;
+  }
+}
+
+// ── Stock Helpers ─────────────────────────────────────────────────────
+function parseArr(r) {
+  if (Array.isArray(r))         return r;
+  if (Array.isArray(r?.result)) return r.result;
+  if (Array.isArray(r?.data))   return r.data;
+  if (r && typeof r==='object') return [r];
+  return [];
+}
+
+function drawLine(id, data, pos) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const col = pos ? '#3fb950' : '#f85149';
+  new Chart(el, {
+    type:'line',
+    data:{ labels:data.map((_,i)=>i), datasets:[{data, borderColor:col, borderWidth:1.5, fill:true, backgroundColor:col+'20', pointRadius:0, tension:0.4}] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
+  });
+}
+
+function drawGray(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const pts = Array.from({length:30}, (_,i)=>50+6*Math.sin(i*.45)+(Math.random()-.5)*1.5);
+  new Chart(el, {
+    type:'line',
+    data:{ labels:pts.map((_,i)=>i), datasets:[{data:pts, borderColor:'#30363d', borderWidth:1.2, fill:true, backgroundColor:'#30363d20', pointRadius:0, tension:0.4}] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
+  });
+}
+
+// ── Load Stocks ───────────────────────────────────────────────────────
+async function loadStocks() {
+  const grid = document.getElementById('sgrid');
+  const from = new Date(); from.setDate(from.getDate()-30);
+  const fromStr = from.toISOString().split('T')[0];
+
+  for (const s of STOCKS) {
+    const d = document.createElement('div');
+    d.className='stock-card'; d.id='sc_'+s.sym;
+    d.innerHTML=`<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="loading"><div class="spinner"></div></div>`;
+    grid.appendChild(d);
+  }
+
+  await Promise.all(STOCKS.map(async s => {
+    const card = document.getElementById('sc_'+s.sym);
+    const cid  = 'cv_'+s.sym;
+    if (s.eu) {
+      card.innerHTML=`<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="chart-box" style="margin-bottom:6px"><canvas id="${cid}"></canvas></div><div class="s-note">🔌 EU-Börsen: FMP Starter Plan</div>`;
+      requestAnimationFrame(()=>drawGray(cid));
+      return;
+    }
+    try {
+      const [qr,cr] = await Promise.all([
+        window.cowork.callMcpTool(T_QUOTE,{endpoint:'quote',symbol:s.fmp}),
+        window.cowork.callMcpTool(T_CHART,{endpoint:'historical-price-eod-light',symbol:s.fmp,from:fromStr}),
+      ]);
+      const q      = parseArr(qr)[0];
+      const closes = parseArr(cr).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(d=>d.price);
+      const chg    = q.changePercentage??0;
+      const pos    = chg>=0;
+      card.innerHTML=`<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="s-price">$${q.price?.toFixed(2)??'–'}</div><div class="s-chg ${pos?'pos':'neg'}">${pos?'▲':'▼'} ${Math.abs(chg).toFixed(2)}% heute</div><div class="chart-box"><canvas id="${cid}"></canvas></div>`;
+      requestAnimationFrame(()=>drawLine(cid,closes,pos));
+    } catch {
+      card.innerHTML=`<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="s-note">⚠️ Nicht verfügbar</div>`;
+    }
+  }));
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────
+const t0 = Date.now();
+renderNews();  // instant – daten bereits eingebettet
+loadStocks().then(()=>{
+  document.getElementById('hmeta').textContent =
+    'Aktualisiert: '+NOW.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+
+    ' · '+((Date.now()-t0)/1000).toFixed(1)+'s · News vom '+NEWS_DATA.generated;
+});
+</script>
+</body>
+</html>

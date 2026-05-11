@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Morning Briefing",
+  "schemaVersion": 1,
+  "description": "Tägliches Morgen-Briefing Dashboard für Daniel: KI-News, Datacenter/Infrastruktur-News (Dell, NVIDIA, Lenovo, IBM, NetApp, Veeam, HPE, Everpure), deutsche Wirtschaft/Mittelstand, sowie Börsencharts für CANCOM, NVIDIA, Invesco NASDAQ-100, Invesco MSCI World, iShares Clean Energy, Amundi DAX 3x und MSCI Europe.",
+  "mcpTools": [
+    "mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__quote",
+    "mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__chart"
+  ],
+  "mcpServerNames": [
+    "FMP",
+    "FMP"
+  ]
+}
+</script>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Morgen-Briefing</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --card:     #1c2128;
+  --border:   #30363d;
+  --accent:   #58a6ff;
+  --accent2:  #1f3a6e;
+  --green:    #3fb950;
+  --red:      #f85149;
+  --text:     #e6edf3;
+  --sub:      #8b949e;
+  --shadow:   0 2px 8px rgba(0,0,0,.4);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:13px;
+  line-height:1.5;
+  padding:16px;
+  min-height:100vh;
+}
+
+/* scrollbar styling */
+::-webkit-scrollbar { width:5px; height:5px }
+::-webkit-scrollbar-track { background:transparent }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px }
+::-webkit-scrollbar-thumb:hover { background:var(--sub) }
+
+/* ── Header ── */
+.header {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.header h1 { font-size:1.2rem; font-weight:700; letter-spacing:-.02em; color:var(--text) }
+.header .date { color:var(--sub); font-size:.77rem; margin-top:2px }
+.header .meta { color:var(--sub); font-size:.72rem; text-align:right }
+
+/* ── Diagnostics ── */
+.diag-box {
+  background:#1a1200;
+  border:1px solid #4a3700;
+  border-radius:10px;
+  padding:12px 16px;
+  margin-bottom:14px;
+  font-size:.77rem;
+}
+.diag-box summary {
+  cursor:pointer;
+  font-weight:600;
+  color:#d4a017;
+  list-style:none;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.diag-box summary::-webkit-details-marker { display:none }
+.diag-body { margin-top:10px; display:flex; flex-direction:column; gap:0 }
+.diag-row { display:flex; gap:10px; align-items:baseline; padding:5px 0; border-bottom:1px solid #4a370040 }
+.diag-row:last-child { border:none }
+.diag-label { min-width:200px; font-weight:600; color:#c4960e }
+.diag-detail { color:#9a7010; font-family:monospace; word-break:break-all }
+
+/* ── Section label ── */
+.sec {
+  font-size:.62rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--sub);
+  margin:14px 0 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.sec::after { content:''; flex:1; height:1px; background:var(--border) }
+
+/* ── News grid ── */
+.news-grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-bottom:14px;
+  align-items:stretch;
+}
+.news-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:0;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  height:280px;         /* fixed equal height */
+}
+.news-card-header {
+  padding:12px 14px 0;
+  flex-shrink:0;
+}
+.card-title {
+  font-size:.67rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  color:var(--accent);
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.news-scroll {
+  flex:1;
+  overflow-y:auto;
+  padding:0 14px 12px;
+  min-height:0;
+}
+
+/* ── Loading ── */
+.loading { display:flex; align-items:center; gap:7px; color:var(--sub); font-size:.8rem; padding:10px 0 }
+.spinner {
+  width:13px; height:13px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  flex-shrink:0;
+}
+@keyframes spin { to { transform:rotate(360deg) } }
+
+/* ── Bullets ── */
+.bullets { list-style:none; display:flex; flex-direction:column; gap:8px }
+.bullets li {
+  font-size:.79rem;
+  line-height:1.55;
+  color:#c9d1d9;
+  padding-left:14px;
+  position:relative;
+}
+.bullets li::before { content:'›'; position:absolute; left:0; color:var(--accent); font-weight:700 }
+
+/* ── Notes ── */
+.info-note {
+  background:var(--accent2);
+  border:1px solid #1f3a6e;
+  border-radius:6px;
+  padding:6px 10px;
+  font-size:.69rem;
+  color:#79c0ff;
+  margin-top:10px;
+}
+.err-note {
+  background:#2d0f0f;
+  border:1px solid #6e1a1a;
+  border-radius:6px;
+  padding:7px 10px;
+  font-size:.69rem;
+  color:#ff7b72;
+  margin-top:6px;
+  font-family:monospace;
+  word-break:break-word;
+}
+
+/* ── Stocks ── */
+.stocks-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(128px,1fr));
+  gap:10px;
+}
+.stock-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 13px 11px;
+  box-shadow:var(--shadow);
+}
+.s-sym  { font-size:.59rem; font-weight:600; color:var(--sub); text-transform:uppercase; letter-spacing:.06em }
+.s-name { font-size:.72rem; font-weight:600; color:var(--text); line-height:1.3; margin:3px 0 8px; min-height:28px }
+.s-price { font-size:1rem; font-weight:700; letter-spacing:-.02em; color:var(--text) }
+.s-chg  { font-size:.7rem; font-weight:600; margin:2px 0 8px }
+.pos { color:var(--green) } .neg { color:var(--red) }
+.chart-box { height:52px }
+.s-note {
+  font-size:.67rem;
+  color:var(--sub);
+  background:#0d1117;
+  border:1px solid var(--border);
+  border-radius:5px;
+  padding:5px 7px;
+  margin-top:4px;
+  line-height:1.4;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>☀️ Guten Morgen, Daniel</h1>
+    <div class="date" id="hdate"></div>
+  </div>
+  <div class="meta" id="hmeta">Lade …</div>
+</div>
+
+<!-- Diagnostics (shown on error) -->
+<details class="diag-box" id="diag" style="display:none">
+  <summary>🔍 Selbstdiagnose – Probleme erkannt</summary>
+  <div class="diag-body" id="diag-rows"></div>
+</details>
+
+<!-- News -->
+<div class="sec">📰 Nachrichten-Briefing</div>
+<div class="news-grid">
+  <div class="news-card">
+    <div class="news-card-header"><div class="card-title">🤖 KI &amp; Modelle</div></div>
+    <div class="news-scroll" id="ai-body"><div class="loading"><div class="spinner"></div>Frage Modell …</div></div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-header"><div class="card-title">🏢 Datacenter &amp; Infrastruktur</div></div>
+    <div class="news-scroll" id="dc-body"><div class="loading"><div class="spinner"></div>Frage Modell …</div></div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-header"><div class="card-title">🇩🇪 Deutsche Wirtschaft</div></div>
+    <div class="news-scroll" id="eco-body"><div class="loading"><div class="spinner"></div>Frage Modell …</div></div>
+  </div>
+</div>
+
+<!-- Stocks -->
+<div class="sec">📈 Börsenübersicht</div>
+<div class="stocks-grid" id="sgrid"></div>
+
+<script>
+// ── MCP Tool IDs ──────────────────────────────────────────────────────
+const T_QUOTE = 'mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__quote';
+const T_CHART = 'mcp__12e2adf4-e226-4014-bf3b-91ab9b38c891__chart';
+
+// ── Stocks config ─────────────────────────────────────────────────────
+const STOCKS = [
+  { name:'CANCOM SE',           sym:'CAN',  fmp:'CAN.DE',  eu:true  },
+  { name:'NVIDIA',              sym:'NVDA', fmp:'NVDA',    eu:false },
+  { name:'Invesco NASDAQ-100',  sym:'EQQQ', fmp:'EQQQ.DE', eu:true  },
+  { name:'Invesco MSCI World',  sym:'MXWO', fmp:'MXWO.DE', eu:true  },
+  { name:'iSh. Clean Energy',   sym:'IQQH', fmp:'IQQH.DE', eu:true  },
+  { name:'Amundi DAX 3×',       sym:'3DAL', fmp:'3DAL.DE', eu:true  },
+  { name:'MSCI Europe',         sym:'SMEA', fmp:'SMEA.PA', eu:true  },
+];
+
+// ── Date ──────────────────────────────────────────────────────────────
+const NOW = new Date();
+document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
+  {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function extractText(v) {
+  if (typeof v === 'string') return v;
+  if (!v) return '';
+  if (typeof v.text    === 'string') return v.text;
+  if (typeof v.content === 'string') return v.content;
+  if (typeof v.message === 'string') return v.message;
+  if (Array.isArray(v.content)) return v.content.map(b=>b.text||b.content||'').join('\n');
+  return JSON.stringify(v);
+}
+
+function parseArr(r) {
+  if (Array.isArray(r))         return r;
+  if (Array.isArray(r?.result)) return r.result;
+  if (Array.isArray(r?.data))   return r.data;
+  if (r && typeof r==='object') return [r];
+  return [];
+}
+
+function renderBullets(raw) {
+  const text = extractText(raw);
+  const lines = text.split('\n')
+    .map(l=>l.replace(/^[\-\*•·\d]+[\.\)]\s*/,'').trim())
+    .filter(l=>l.length>8).slice(0,8);
+  if (!lines.length) return `<p style="color:var(--sub);font-size:.8rem">${text.slice(0,400)}</p>`;
+  return `<ul class="bullets">${lines.map(l=>`<li>${l}</li>`).join('')}</ul>`;
+}
+
+// ── Diagnostics ───────────────────────────────────────────────────────
+const diagLog = [];
+function addDiag(label, ok, detail='') {
+  diagLog.push({label,ok,detail});
+  if (!ok) {
+    document.getElementById('diag').style.display = '';
+    document.getElementById('diag-rows').innerHTML = diagLog.map(d=>
+      `<div class="diag-row">
+        <span>${d.ok?'✅':'❌'}</span>
+        <span class="diag-label">${d.label}</span>
+        <span class="diag-detail">${d.detail}</span>
+      </div>`
+    ).join('');
+  }
+}
+
+// Availability checks (instant, no API calls)
+addDiag('window.cowork.askClaude',   typeof window.cowork?.askClaude==='function',   typeof window.cowork?.askClaude);
+addDiag('window.cowork.callMcpTool', typeof window.cowork?.callMcpTool==='function', typeof window.cowork?.callMcpTool);
+
+// ── News (strictly sequential) ────────────────────────────────────────
+const NEWS = [
+  { id:'ai-body',  prompt:'Nenne 5 wichtige aktuelle KI-Entwicklungen (neue Modelle, OpenAI, Google, Anthropic, Meta, Mistral). Deutsch, Bulletpoints, jeder Punkt beginnt mit -' },
+  { id:'dc-body',  prompt:'Nenne 5 wichtige aktuelle Entwicklungen in Rechenzentren/IT-Infrastruktur, Fokus Dell, NVIDIA, HPE, IBM, NetApp, Veeam, Lenovo, Everpure. Deutsch, Bulletpoints, jeder Punkt beginnt mit -' },
+  { id:'eco-body', prompt:'Nenne 5 wichtige aktuelle Entwicklungen in der deutschen Wirtschaft: Mittelstand, IT-Investitionen, KI-Adoption, Digitalisierung. Deutsch, Bulletpoints, jeder Punkt beginnt mit -' },
+];
+
+async function loadNews() {
+  for (const s of NEWS) {
+    const el = document.getElementById(s.id);
+    try {
+      const result = await Promise.race([
+        window.cowork.askClaude(s.prompt, []),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout nach 25s')), 25000))
+      ]);
+      const text = extractText(result);
+      if (!text || text.length < 5)
+        throw new Error('Leere Antwort: ' + JSON.stringify(result).slice(0,80));
+      if (text.toLowerCase().includes('inference did not complete'))
+        throw new Error('Inference did not complete');
+      el.innerHTML = renderBullets(text) +
+        `<div class="info-note">ℹ️ Modell-Wissen — Live-News erfordert News-Connector.</div>`;
+      addDiag('askClaude · '+s.id, true, text.slice(0,45)+'…');
+    } catch(e) {
+      el.innerHTML = `<div class="err-note">⚠️ ${e.message}</div>`;
+      addDiag('askClaude · '+s.id, false, e.message);
+    }
+  }
+}
+
+// ── Charts ────────────────────────────────────────────────────────────
+function drawLine(id, data, pos) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const col = pos ? '#3fb950' : '#f85149';
+  new Chart(el, {
+    type:'line',
+    data:{ labels:data.map((_,i)=>i), datasets:[{data, borderColor:col, borderWidth:1.5, fill:true, backgroundColor:col+'20', pointRadius:0, tension:0.4}] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
+  });
+}
+
+function drawGray(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const pts = Array.from({length:30}, (_,i)=>50+6*Math.sin(i*.45)+(Math.random()-.5)*1.5);
+  new Chart(el, {
+    type:'line',
+    data:{ labels:pts.map((_,i)=>i), datasets:[{data:pts, borderColor:'#30363d', borderWidth:1.2, fill:true, backgroundColor:'#30363d20', pointRadius:0, tension:0.4}] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
+  });
+}
+
+// ── Stocks ────────────────────────────────────────────────────────────
+async function loadStocks() {
+  const grid = document.getElementById('sgrid');
+  const from = new Date(); from.setDate(from.getDate()-30);
+  const fromStr = from.toISOString().split('T')[0];
+
+  for (const s of STOCKS) {
+    const d = document.createElement('div');
+    d.className='stock-card'; d.id='sc_'+s.sym;
+    d.innerHTML=`<div class="s-sym">${s.sym}</div><div class="s-name">${s.name}</div><div class="loading"><div class="spinner"></div></div>`;
+    grid.appendChild(d);
+  }
+
+  await Promise.all(STOCKS.map(async s => {
+    const card = document.getElementById('sc_'+s.sym);
+    const cid  = 'cv_'+s.sym;
+
+    if (s.eu) {
+      card.innerHTML = `
+        <div class="s-sym">${s.sym}</div>
+        <div class="s-name">${s.name}</div>
+        <div class="chart-box" style="margin-bottom:6px"><canvas id="${cid}"></canvas></div>
+        <div class="s-note">🔌 EU-Börsen: FMP Starter Plan</div>`;
+      requestAnimationFrame(()=>drawGray(cid));
+      return;
+    }
+
+    try {
+      const [qr, cr] = await Promise.all([
+        window.cowork.callMcpTool(T_QUOTE, {endpoint:'quote', symbol:s.fmp}),
+        window.cowork.callMcpTool(T_CHART, {endpoint:'historical-price-eod-light', symbol:s.fmp, from:fromStr}),
+      ]);
+      const q       = parseArr(qr)[0];
+      const history = parseArr(cr).sort((a,b)=>new Date(a.date)-new Date(b.date));
+      const closes  = history.map(d=>d.price);
+      const chg     = q.changePercentage ?? 0;
+      const pos     = chg >= 0;
+
+      card.innerHTML = `
+        <div class="s-sym">${s.sym}</div>
+        <div class="s-name">${s.name}</div>
+        <div class="s-price">$${q.price?.toFixed(2)??'–'}</div>
+        <div class="s-chg ${pos?'pos':'neg'}">${pos?'▲':'▼'} ${Math.abs(chg).toFixed(2)}% heute</div>
+        <div class="chart-box"><canvas id="${cid}"></canvas></div>`;
+      requestAnimationFrame(()=>drawLine(cid, closes, pos));
+      addDiag('FMP · '+s.sym, true, '$'+q.price?.toFixed(2));
+    } catch(e) {
+      card.innerHTML = `
+        <div class="s-sym">${s.sym}</div>
+        <div class="s-name">${s.name}</div>
+        <div class="s-note">⚠️ ${e.message.slice(0,50)}</div>`;
+      addDiag('FMP · '+s.sym, false, e.message.slice(0,60));
+    }
+  }));
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────
+const t0 = Date.now();
+(async()=>{
+  const stocksDone = loadStocks();   // FMP calls – parallel OK
+  await loadNews();                  // askClaude – strictly sequential
+  await stocksDone;
+  document.getElementById('hmeta').textContent =
+    'Aktualisiert: ' + NOW.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) +
+    ' · ' + ((Date.now()-t0)/1000).toFixed(1)+'s';
+})();
+</script>
+</body>
+</html>
