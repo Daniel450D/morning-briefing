@@ -155,6 +155,18 @@ const NEWS_DATA = {
           {"date":"2026-05-07","text": "Aruba Networks: EdgeConnect SD-WAN jetzt mit KI-gestütztem Performance Management für Hybrid Work", "source": "computerweekly.com", "url": "https://www.computerweekly.com/aruba-edgeconnect"},
           {"date":"2026-05-06","text": "BSI warnt: Ransomware-Anschläge auf deutsche Infrastruktur nehmen zu – Kritische Schwachstellen in VPN-Lösungen gefunden", "source": "heise.de", "url": "https://www.heise.de/news/bsi-ransomware-2026"}
         ]
+      },
+      {
+        "key": "modernwork",
+        "title": "💼 Modern Work",
+        "items": [
+          {"date":"2026-05-11","text": "Apple präsentiert neue iPad Pro Linie mit M4-Chip: Optimiert für Enterprise Workplace und Hybrid Work", "source": "appleinsider.de", "url": "https://appleinsider.de/artikel/apple-ipad-pro-2026"},
+          {"date":"2026-05-10","text": "Microsoft und Steelcase kooperieren: Intelligente Konferenzräume mit Copilot Pro für smarte Raumverwaltung", "source": "microsoft.com", "url": "https://microsoft.com/workplace"},
+          {"date":"2026-05-09","text": "Cisco Webex Space erweitert Features: KI-gestützte Meeting-Planung und automatische Raumbuchung für Hybrid Worker", "source": "cisco.com", "url": "https://www.cisco.com/c/de_de/products/collaboration/webex/index.html"},
+          {"date":"2026-05-08","text": "Henkel und Vitra präsentieren ergonomische Arbeitsplatz-Innovationen: Höhenverstellbare Tische mit Health Tracking", "source": "möbel-industrie.de", "url": "https://moebel-industrie.de"},
+          {"date":"2026-05-07","text": "Slack und Zoom integrieren AI Companion: Intelligente Assistenten für virtuelle Meetings und Workspace Management", "source": "slack.com", "url": "https://slack.com/de/features"},
+          {"date":"2026-05-06","text": "Herman Miller und Google Cloud: Workplace Analytics nutzt KI um Büroeffizienz um 23% zu steigern", "source": "hermanmiller.com", "url": "https://www.hermanmiller.com/"}
+        ]
       }
     ]
   }
@@ -251,7 +263,7 @@ function renderTechnologyNews() {
   const container = document.getElementById('tech-categories');
   
   container.innerHTML = `
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px">
       ${tech.subcategories.map(sub =>
         `<div>
           <div style="font-size:.72rem; font-weight:700; color:var(--accent); margin-bottom:12px">${sub.title}</div>
