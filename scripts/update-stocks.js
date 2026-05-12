@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { fetchStockData } = require('./fetch-stock-data');
+const { fetchStockData, fetchHistoricalDataForSymbols } = require('./fetch-stock-data');
 
 const STOCK_SYMBOLS = ['CAN', 'CCC', 'BRL', '^GDAXI', '^SDAXI', '^CDAX'];
 const STOCK_NAMES = {
@@ -27,6 +27,9 @@ async function updateStockData() {
     console.log('Fetching latest stock data...');
     const stockData = await fetchStockData(STOCK_SYMBOLS);
     
+    console.log('Fetching historical data for charts...');
+    const historicalData = await fetchHistoricalDataForSymbols(STOCK_SYMBOLS);
+    
     // Build stock objects array
     const stocks = STOCK_SYMBOLS.map(sym => ({
       sym: sym.replace('^', ''),
@@ -44,6 +47,10 @@ async function updateStockData() {
   "stocks": [
 ${stocks.map(s => `    { "sym": "${s.sym}",  "name": "${s.name.padEnd(20)}", "price": "${s.price.padEnd(10)}", "currency": "${s.currency}", "change_pct": ${s.change_pct}, "exchange": "${s.exchange}"  }`).join(',\n')}
   ]
+};
+
+const STOCK_HISTORY = {
+${STOCK_SYMBOLS.map(sym => `  "${sym.replace('^', '')}": [${historicalData[sym].map(p => p.toFixed(2)).join(', ')}]`).join(',\n')}
 };`;
 
     // Read current index.html
@@ -71,9 +78,10 @@ ${stocks.map(s => `    { "sym": "${s.sym}",  "name": "${s.name.padEnd(20)}", "pr
     fs.writeFileSync(indexPath, updatedContent, 'utf8');
     
     console.log('✅ Stock data updated successfully');
-    console.log(`Updated ${stocks.length} stocks`);
+    console.log(`Updated ${stocks.length} stocks with historical data`);
     stocks.forEach(s => {
-      console.log(`  ${s.sym}: ${s.price} ${s.currency} (${s.change_pct > 0 ? '+' : ''}${s.change_pct.toFixed(2)}%)`);
+      const hist = historicalData[s.sym.replace('^', '')] || [];
+      console.log(`  ${s.sym}: ${s.price} ${s.currency} (${s.change_pct > 0 ? '+' : ''}${s.change_pct.toFixed(2)}%) - ${hist.length} days history`);
     });
     
   } catch (error) {

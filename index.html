@@ -341,17 +341,31 @@ renderTechnologyNews();
     requestAnimationFrame(() => {
       const el = document.getElementById(cid);
       if (!el) return;
-      const len = 30;
-      // simulate a mini trend: slight drift matching the change direction
-      const drift = chg * 0.08;
-      const pts = Array.from({ length: len }, (_, i) =>
-        50 + drift * i + 5 * Math.sin(i * 0.6 + (s.sym.charCodeAt(0) % 5)) + (Math.random() - 0.5) * 1.2
-      );
+      
+      // Use real historical data if available, otherwise generate realistic trend
+      let pts;
+      if (STOCK_HISTORY && STOCK_HISTORY[s.sym]) {
+        pts = STOCK_HISTORY[s.sym];
+      } else {
+        // Fallback: generate realistic trend
+        const len = 30;
+        const drift = chg * 0.08;
+        pts = Array.from({ length: len }, (_, i) =>
+          50 + drift * i + 5 * Math.sin(i * 0.6 + (s.sym.charCodeAt(0) % 5)) + (Math.random() - 0.5) * 1.2
+        );
+      }
+      
+      // Normalize prices to 0-100 range for consistent scaling
+      const minPrice = Math.min(...pts);
+      const maxPrice = Math.max(...pts);
+      const range = maxPrice - minPrice || 1;
+      const normalizedPts = pts.map(p => ((p - minPrice) / range * 100));
+      
       new Chart(el, {
         type: 'line',
         data: {
-          labels: pts.map((_, i) => i),
-          datasets: [{ data: pts, borderColor: color, borderWidth: 1.5, fill: true,
+          labels: normalizedPts.map((_, i) => i),
+          datasets: [{ data: normalizedPts, borderColor: color, borderWidth: 1.5, fill: true,
             backgroundColor: color + '18', pointRadius: 0, tension: 0.4 }]
         },
         options: { responsive: true, maintainAspectRatio: false, animation: false,
