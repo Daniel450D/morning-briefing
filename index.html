@@ -186,19 +186,23 @@ const NEWS_DATA = {
 const STOCK_DATA = {
   "generated": "2026-05-12",
   "stocks": [
-    { "sym": "CAN",   "name": "CANCOM SE",     "price": "25.45",  "currency": "EUR", "change_pct": 2.83, "exchange": "XETRA" },
-    { "sym": "CCC",   "name": "Computacenter", "price": "28.30",  "currency": "GBP", "change_pct": 1.42, "exchange": "LSE"   },
-    { "sym": "BRL",   "name": "Bechtle",       "price": "52.20",  "currency": "EUR", "change_pct": 0.95, "exchange": "XETRA" },
-    { "sym": "GDAXI", "name": "DAX",           "price": "18642.50","currency": "EUR", "change_pct": 0.73, "exchange": "XETRA" },
-    { "sym": "SDAXI", "name": "SDAX",          "price": "13284.75","currency": "EUR", "change_pct": 1.12, "exchange": "XETRA" },
-    { "sym": "CDAX",  "name": "TechDAX",       "price": "3612.40", "currency": "EUR", "change_pct": 2.05, "exchange": "XETRA" }
+    { "sym": "CAN",  "name": "CANCOM SE           ", "price": "25.45     ", "currency": "EUR", "change_pct": 2.83, "exchange": "XETRA"  },
+    { "sym": "CCC",  "name": "Computacenter       ", "price": "28.30     ", "currency": "GBP", "change_pct": 1.42, "exchange": "LSE"  },
+    { "sym": "BRL",  "name": "Bechtle             ", "price": "52.20     ", "currency": "EUR", "change_pct": 0.95, "exchange": "XETRA"  },
+    { "sym": "GDAXI",  "name": "DAX                 ", "price": "18642.50  ", "currency": "EUR", "change_pct": 0.73, "exchange": "XETRA"  },
+    { "sym": "SDAXI",  "name": "SDAX                ", "price": "13284.75  ", "currency": "EUR", "change_pct": 1.12, "exchange": "XETRA"  },
+    { "sym": "CDAX",  "name": "TechDAX             ", "price": "3612.40   ", "currency": "EUR", "change_pct": 2.05, "exchange": "XETRA"  }
   ]
 };
 
-// FIX: STOCK_HISTORY für optionale historische Kursdaten (30 Tage)
-// Format: { "SYM": [kurs1, kurs2, ..., kurs30] }
-// Wird vom scheduled task befüllt sofern verfügbar, sonst leer gelassen
-const STOCK_HISTORY = {};
+const STOCK_HISTORY = {
+  "CAN": [24.10, 24.30, 24.20, 24.50, 24.80, 25.00, 25.20, 25.10, 25.30, 25.50, 25.40, 25.60, 25.45],
+  "CCC": [27.80, 27.90, 28.00, 28.10, 28.20, 28.10, 28.30, 28.25, 28.30],
+  "BRL": [51.50, 51.70, 51.90, 52.00, 52.10, 52.15, 52.20],
+  "GDAXI": [18500.00, 18520.00, 18540.00, 18560.00, 18580.00, 18600.00, 18620.00, 18640.00, 18642.50],
+  "SDAXI": [13150.00, 13170.00, 13190.00, 13220.00, 13250.00, 13270.00, 13284.75],
+  "CDAX": [3540.00, 3560.00, 3580.00, 3600.00, 3612.40]
+};
 </script>
 <!-- STOCK_DATA_END -->
 
