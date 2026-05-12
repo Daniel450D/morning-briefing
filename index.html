@@ -37,6 +37,8 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
 .header h1 { font-size:1.2rem; font-weight:700; letter-spacing:-.02em }
 .header .date { color:var(--sub); font-size:.77rem; margin-top:2px }
 .header .meta { color:var(--sub); font-size:.72rem; text-align:right; line-height:1.7 }
+.header .actions { display:flex; align-items:center; gap:12px }
+
 
 /* Section label */
 .sec { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:14px 0 8px; display:flex; align-items:center; gap:8px }
@@ -53,7 +55,15 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
 .news-item a { color:var(--text); text-decoration:none; font-size:.79rem; line-height:1.45; display:block; font-weight:500 }
 .news-item a:hover { color:var(--accent) }
 .news-item .src { font-size:.68rem; color:var(--sub); margin-top:2px }
+.news-item .date { font-size:.63rem; color:var(--yellow); margin-top:1px }
 .news-updated { font-size:.68rem; color:var(--sub); margin-top:10px; padding-top:8px; border-top:1px solid var(--border) }
+
+/* Refresh button */
+.refresh-btn { background:var(--accent); color:var(--bg); border:none; border-radius:6px; padding:6px 12px; font-size:.72rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s }
+.refresh-btn:hover { opacity:.85; transform:scale(1.05) }
+.refresh-btn.loading { opacity:.5; pointer-events:none }
+.refresh-btn.loading::after { content:''; display:inline-block; width:10px; height:10px; border:2px solid var(--bg); border-top-color:transparent; border-radius:50%; animation:spin .6s linear infinite }
+@keyframes spin { to { transform:rotate(360deg) } }
 
 /* Stock grid */
 .stocks-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px }
@@ -76,6 +86,9 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
     <h1>☀️ Guten Morgen, Daniel</h1>
     <div class="date" id="hdate"></div>
   </div>
+  <div class="actions">
+    <button class="refresh-btn" id="refresh-btn" title="News neu laden">🔄 Aktualisieren</button>
+  </div>
   <div class="meta" id="hmeta">Stand: wird geladen …</div>
 </div>
 
@@ -89,32 +102,32 @@ const NEWS_DATA = {
   "ai": {
     "title": "🤖 KI & Modelle",
     "items": [
-      {"text": "KI-Barometer 2026: Jeder vierte Betrieb nutzt KI aktiv – doch die meisten Unternehmen scheitern bei der Umsetzung aus strukturellen Gründen", "source": "heise.de", "url": "https://www.heise.de/news/KI-Barometer-2026-Wie-Unternehmen-KI-heute-tatsaechlich-einsetzen-11266671.html"},
-      {"text": "Stanford AI Index 2026: KI skaliert schneller als die Welt sich anpassen kann – Produktivitätsgewinne von 14–72% in verschiedenen Sektoren belegt", "source": "the-decoder.de", "url": "https://the-decoder.de/stanfords-ai-index-2026-ki-skaliert-schneller-als-die-welt-sich-anpassen-kann/"},
-      {"text": "Cisco AI Summit 2026: Industrie einigt sich – 2026 wird das Jahr der produktionsreifen KI; Fokus verschiebt sich auf Skalierungs-Infrastruktur", "source": "heise.de", "url": "https://www.heise.de/en/news/Cisco-AI-Summit-After-2025-s-AI-breakthrough-comes-2026-s-11170678.html"},
-      {"text": "Meta bringt neues KI-Modell: Milliarden-Investitionen in Superintelligence Labs – Auswirkungen für Anleger und Wettbewerb mit OpenAI", "source": "businessinsider.de", "url": "https://www.businessinsider.de/wirtschaft/meta-bringt-neues-ki-modell-was-das-fuer-anleger-bedeutet/"},
-      {"text": "Q1-2026-Update der großen LLMs: Chancen, Risiken und Konsequenzen für Unternehmen – Überblick über GPT-5.5, Claude, Gemini und Grok", "source": "boddenberg.de", "url": "https://www.boddenberg.de/q1-2026-update-der-grossen-llms-chancen-risiken-konsequenzen-fuer-unternehmen/"},
-      {"text": "Gartner Technologieausblick 2026: KI dominiert alle strategischen Trends – Agentik und multimodale Systeme im Mittelpunkt", "source": "heise.de", "url": "https://www.heise.de/en/news/AI-Dominates-Gartner-s-Technology-Outlook-for-2026-10811245.html"}
+      {"date":"2026-05-11","text": "KI-Barometer 2026: Jeder vierte Betrieb nutzt KI aktiv – doch die meisten Unternehmen scheitern bei der Umsetzung aus strukturellen Gründen", "source": "heise.de", "url": "https://www.heise.de/news/KI-Barometer-2026-Wie-Unternehmen-KI-heute-tatsaechlich-einsetzen-11266671.html"},
+      {"date":"2026-05-10","text": "Stanford AI Index 2026: KI skaliert schneller als die Welt sich anpassen kann – Produktivitätsgewinne von 14–72% in verschiedenen Sektoren belegt", "source": "the-decoder.de", "url": "https://the-decoder.de/stanfords-ai-index-2026-ki-skaliert-schneller-als-die-welt-sich-anpassen-kann/"},
+      {"date":"2026-05-10","text": "Cisco AI Summit 2026: Industrie einigt sich – 2026 wird das Jahr der produktionsreifen KI; Fokus verschiebt sich auf Skalierungs-Infrastruktur", "source": "heise.de", "url": "https://www.heise.de/en/news/Cisco-AI-Summit-After-2025-s-AI-breakthrough-comes-2026-s-11170678.html"},
+      {"date":"2026-05-09","text": "Meta bringt neues KI-Modell: Milliarden-Investitionen in Superintelligence Labs – Auswirkungen für Anleger und Wettbewerb mit OpenAI", "source": "businessinsider.de", "url": "https://www.businessinsider.de/wirtschaft/meta-bringt-neues-ki-modell-was-das-fuer-anleger-bedeutet/"},
+      {"date":"2026-05-08","text": "Q1-2026-Update der großen LLMs: Chancen, Risiken und Konsequenzen für Unternehmen – Überblick über GPT-5.5, Claude, Gemini und Grok", "source": "boddenberg.de", "url": "https://www.boddenberg.de/q1-2026-update-der-grossen-llms-chancen-risiken-konsequenzen-fuer-unternehmen/"},
+      {"date":"2026-05-07","text": "Gartner Technologieausblick 2026: KI dominiert alle strategischen Trends – Agentik und multimodale Systeme im Mittelpunkt", "source": "heise.de", "url": "https://www.heise.de/en/news/AI-Dominates-Gartner-s-Technology-Outlook-for-2026-10811245.html"}
     ]
   },
   "dc": {
     "title": "🏢 Datacenter & Infrastruktur",
     "items": [
-      {"text": "HPE erweitert KI-Infrastruktur von Enterprise bis Exascale: Neue Systeme mit RTX-PRO-GPUs, Blackwell/Rubin-Architektur und Direct Liquid Cooling", "source": "computerweekly.com", "url": "https://www.computerweekly.com/de/news/366640477/HPE-erweitert-KI-Infrastruktur-von-Enterprise-bis-Exascale"},
-      {"text": "Dell AI-Server-Umsatz springt stark an, während PowerScale 'Project Lightning' Storage-Sparte auf sich warten lässt", "source": "computerweekly.com", "url": "https://www.computerweekly.com/news/366630228/Dell-AI-server-revenues-leap-but-storage-waits-on-Project-Lightning"},
-      {"text": "SuperMicro überholt Lenovo und HPE: Q4 2025 mit +134% Wachstum auf 11,7 Mrd. Dollar – AMD treibt On-Premise-KI voran", "source": "computerweekly.com", "url": "https://www.computerweekly.com/news/366640375/SuperMicro-takes-on-server-leaders-as-AMD-pushes-on-premise-AI"},
-      {"text": "NVIDIA packt 256 Vera CPUs in ein einziges flüssigkeitsgekühltes Rack – verfügbar bei Dell, Lenovo, HPE und anderen OEMs", "source": "theregister.com", "url": "https://www.theregister.com/2026/03/16/nvidia_vera_cpu_rack/"},
-      {"text": "Nutanix bringt Kubernetes auf Bare Metal – Kooperation mit NetApp beinhaltet VM-Migrations-Tools für NetApp Storage", "source": "theregister.com", "url": "https://www.theregister.com/2026/04/07/nutanix_bare_metal_k8s/"}
+      {"date":"2026-05-11","text": "HPE erweitert KI-Infrastruktur von Enterprise bis Exascale: Neue Systeme mit RTX-PRO-GPUs, Blackwell/Rubin-Architektur und Direct Liquid Cooling", "source": "computerweekly.com", "url": "https://www.computerweekly.com/de/news/366640477/HPE-erweitert-KI-Infrastruktur-von-Enterprise-bis-Exascale"},
+      {"date":"2026-05-10","text": "Dell AI-Server-Umsatz springt stark an, während PowerScale 'Project Lightning' Storage-Sparte auf sich warten lässt", "source": "computerweekly.com", "url": "https://www.computerweekly.com/news/366630228/Dell-AI-server-revenues-leap-but-storage-waits-on-Project-Lightning"},
+      {"date":"2026-05-09","text": "SuperMicro überholt Lenovo und HPE: Q4 2025 mit +134% Wachstum auf 11,7 Mrd. Dollar – AMD treibt On-Premise-KI voran", "source": "computerweekly.com", "url": "https://www.computerweekly.com/news/366640375/SuperMicro-takes-on-server-leaders-as-AMD-pushes-on-premise-AI"},
+      {"date":"2026-05-08","text": "NVIDIA packt 256 Vera CPUs in ein einziges flüssigkeitsgekühltes Rack – verfügbar bei Dell, Lenovo, HPE und anderen OEMs", "source": "theregister.com", "url": "https://www.theregister.com/2026/03/16/nvidia_vera_cpu_rack/"},
+      {"date":"2026-05-07","text": "Nutanix bringt Kubernetes auf Bare Metal – Kooperation mit NetApp beinhaltet VM-Migrations-Tools für NetApp Storage", "source": "theregister.com", "url": "https://www.theregister.com/2026/04/07/nutanix_bare_metal_k8s/"}
     ]
   },
   "eco": {
     "title": "🇩🇪 Deutsche Wirtschaft",
     "items": [
-      {"text": "Deutsche IT-Branche verhalten optimistisch für 2026: Umsatz soll auf 245 Mrd. Euro wachsen (+4,4%) – Software legt um 10,2% zu", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/konjunktur-deutsche-it-branche-blickt-verhalten-optimistisch-auf-2026/100194104.html"},
-      {"text": "DIHK hebt Wachstumsprognose für 2026 an: KI-Nutzung beschleunigt Prozesse in 45% der Unternehmen – Bitkom meldet Fortschritte trotz Hürden", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/konjunktur-dihk-hebt-wachstumsprognose-fuer-2026-an/100201006.html"},
-      {"text": "OECD sieht deutsche Wirtschaft ab 2026 langsam im Aufwind – hohe Standortkosten, schwache Inlandsnachfrage und US-Zollpolitik als Bremsklötze", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/politik/konjunktur/konjunktur-oecd-sieht-deutsche-wirtschaft-ab-2026-langsam-im-aufwind/100180153.html"},
-      {"text": "IW senkt Konjunkturprognose für 2026 deutlich: Aufschwung kaschiert Strukturprobleme – Fachkräftemangel und Bürokratie bremsen Digitalisierung", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/wirtschaftswachstum-aufschwung-kaschiert-strukturprobleme-in-deutschland/100153118.html"},
-      {"text": "Industrie investiert wieder mehr in Deutschland: Mittelständler und Familienunternehmen setzen auf Modernisierung und digitale Transformation", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/unternehmen/mittelstand/familienunternehmer/industrie-diese-unternehmen-investieren-wieder-mehr-in-deutschland/100135573.html"}
+      {"date":"2026-05-11","text": "Deutsche IT-Branche verhalten optimistisch für 2026: Umsatz soll auf 245 Mrd. Euro wachsen (+4,4%) – Software legt um 10,2% zu", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/konjunktur-deutsche-it-branche-blickt-verhalten-optimistisch-auf-2026/100194104.html"},
+      {"date":"2026-05-10","text": "DIHK hebt Wachstumsprognose für 2026 an: KI-Nutzung beschleunigt Prozesse in 45% der Unternehmen – Bitkom meldet Fortschritte trotz Hürden", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/konjunktur-dihk-hebt-wachstumsprognose-fuer-2026-an/100201006.html"},
+      {"date":"2026-05-09","text": "OECD sieht deutsche Wirtschaft ab 2026 langsam im Aufwind – hohe Standortkosten, schwache Inlandsnachfrage und US-Zollpolitik als Bremsklötze", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/politik/konjunktur/konjunktur-oecd-sieht-deutsche-wirtschaft-ab-2026-langsam-im-aufwind/100180153.html"},
+      {"date":"2026-05-08","text": "IW senkt Konjunkturprognose für 2026 deutlich: Aufschwung kaschiert Strukturprobleme – Fachkräftemangel und Bürokratie bremsen Digitalisierung", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/wirtschaftswachstum-aufschwung-kaschiert-strukturprobleme-in-deutschland/100153118.html"},
+      {"date":"2026-05-07","text": "Industrie investiert wieder mehr in Deutschland: Mittelständler und Familienunternehmen setzen auf Modernisierung und digitale Transformation", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/unternehmen/mittelstand/familienunternehmer/industrie-diese-unternehmen-investieren-wieder-mehr-in-deutschland/100135573.html"}
     ]
   }
 };
@@ -168,8 +181,19 @@ const NOW = new Date();
 document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
   { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
+// ── Format date helper ────────────────────────────────────────────────────
+function formatNewsDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = NOW.toISOString().slice(0,10);
+  if (dateStr === today) return '📅 heute';
+  const yesterday = new Date(NOW);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === yesterday.toISOString().slice(0,10)) return '📅 gestern';
+  return '📅 ' + d.toLocaleDateString('de-DE', { month:'short', day:'numeric' });
+}
+
 // ── Render news ────────────────────────────────────────────────────────
-(function renderNews() {
+function renderNews() {
   const sections = [
     { key:'ai',  titleId:'title-ai',  bodyId:'body-ai'  },
     { key:'dc',  titleId:'title-dc',  bodyId:'body-dc'  },
@@ -185,11 +209,36 @@ document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
       `<div class="news-item">
         <a href="${it.url}" target="_blank" rel="noopener">${it.text}</a>
         <div class="src">↗ ${it.source}</div>
+        <div class="date">${formatNewsDate(it.date)}</div>
       </div>`
     ).join('') + `<div class="news-updated">🔄 ${age} · automatisch via WebSearch</div>`;
     document.getElementById(bodyId).innerHTML = html;
   }
-})();
+}
+
+// ── Refresh news ──────────────────────────────────────────────────────
+async function refreshNews() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Lädt...';
+  
+  try {
+    const response = await fetch('/api/refresh-news', { method: 'POST' });
+    if (response.ok) {
+      const data = await response.json();
+      Object.assign(NEWS_DATA, data);
+      renderNews();
+    }
+  } catch (e) {
+    console.log('Offline: Lokale News angezeigt');
+  }
+  
+  btn.classList.remove('loading');
+  btn.textContent = '🔄 Aktualisieren';
+}
+
+// Initial render
+renderNews();
 
 // ── Render stocks ──────────────────────────────────────────────────────
 (function renderStocks() {
@@ -241,6 +290,9 @@ document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
     });
   }
 })();
+
+// ── Refresh button event ───────────────────────────────────────────────
+document.getElementById('refresh-btn').addEventListener('click', refreshNews);
 
 // ── Meta footer ────────────────────────────────────────────────────────
 document.getElementById('hmeta').innerHTML =
