@@ -1,0 +1,35 @@
+name: Update Stock Data
+
+on:
+  schedule:
+    # Täglich um 06:00 Uhr UTC (07:00 Uhr deutscher Zeit im Winter, 08:00 im Sommer)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Manuell auslösbar
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Fetch and update stock data
+        run: node scripts/update-stocks.js
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "⬆️ Update stock data - $(date +'%Y-%m-%d %H:%M:%S')" && git push)

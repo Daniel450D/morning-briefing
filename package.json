@@ -1,0 +1,16 @@
+{
+  "name": "morning-briefing",
+  "version": "1.0.0",
+  "description": "Daily morning briefing dashboard with news and stock data",
+  "scripts": {
+    "update-stocks": "node scripts/update-stocks.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Daniel450D/morning-briefing.git"
+  },
+  "keywords": ["dashboard", "news", "stocks"],
+  "author": "Daniel Kiehl",
+  "license": "MIT",
+  "dependencies": {}
+}
