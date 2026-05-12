@@ -39,47 +39,37 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
 .header .meta { color:var(--sub); font-size:.72rem; text-align:right; line-height:1.7 }
 .header .actions { display:flex; align-items:center; gap:12px }
 
-
 /* Section label */
 .sec { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:14px 0 8px; display:flex; align-items:center; gap:8px }
 .sec::after { content:''; flex:1; height:1px; background:var(--border) }
 
 /* News */
-.news-section { margin-bottom:14px }
 .news-section-full { background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:14px; margin-bottom:14px }
 .news-section-full .card-title { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); margin-bottom:12px }
-.news-section-full .news-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px }
+.news-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px }
 .news-item { padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; display:flex; flex-direction:column }
 .news-item a { color:var(--text); text-decoration:none; font-size:.79rem; line-height:1.45; display:block; font-weight:500; margin-bottom:6px }
 .news-item a:hover { color:var(--accent) }
 .news-item .src { font-size:.68rem; color:var(--sub) }
-.news-item .date { font-size:.63rem; color:var(--yellow); margin-top:4px }
+.news-item .date-tag { font-size:.63rem; color:var(--yellow); margin-top:4px }
+.news-updated { font-size:.63rem; color:var(--sub); margin-top:12px; padding-top:12px; border-top:1px solid var(--border) }
 
 .section-divider { height:2px; background:linear-gradient(90deg, transparent, var(--border), transparent); margin:20px 0 }
 
-.news-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px }
-.news-card { background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); display:flex; flex-direction:column; height:300px }
-.news-head { padding:12px 14px 0; flex-shrink:0 }
-.card-title { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); margin-bottom:8px }
-.news-scroll { flex:1; overflow-y:auto; padding:0 14px 12px; min-height:0 }
-.news-updated { font-size:.68rem; color:var(--sub); margin-top:10px; padding-top:8px; border-top:1px solid var(--border) }
-
 /* Refresh button */
-.refresh-btn { background:var(--accent); color:var(--bg); border:none; border-radius:6px; padding:6px 12px; font-size:.72rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s }
-.refresh-btn:hover { opacity:.85; transform:scale(1.05) }
-.refresh-btn.loading { opacity:.5; pointer-events:none }
-.refresh-btn.loading::after { content:''; display:inline-block; width:10px; height:10px; border:2px solid var(--bg); border-top-color:transparent; border-radius:50%; animation:spin .6s linear infinite }
-@keyframes spin { to { transform:rotate(360deg) } }
+.refresh-btn { background:var(--accent); color:var(--bg); border:none; border-radius:6px; padding:6px 12px; font-size:.72rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:opacity .2s }
+.refresh-btn:hover { opacity:.85 }
+.refresh-btn:disabled { opacity:.5; cursor:default }
+.refresh-toast { font-size:.69rem; color:var(--sub); margin-top:4px }
 
 /* Stock grid */
 .stocks-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px }
-.stock-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:13px 14px 12px; box-shadow:var(--shadow); position:relative; overflow:hidden }
+.stock-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:13px 14px 12px; box-shadow:var(--shadow) }
 .s-sym  { font-size:.59rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em }
 .s-name { font-size:.72rem; font-weight:600; color:var(--text); line-height:1.3; margin:3px 0 10px; min-height:30px }
 .s-price { font-size:1.05rem; font-weight:700; letter-spacing:-.02em; color:var(--text) }
 .s-curr { font-size:.65rem; color:var(--sub); margin-left:2px; font-weight:500 }
 .s-chg  { font-size:.72rem; font-weight:700; margin:3px 0 10px; display:flex; align-items:center; gap:3px }
-.s-chg .arrow { font-size:.65rem }
 .pos { color:var(--green) } .neg { color:var(--red) } .flat { color:var(--sub) }
 .chart-box { height:48px; margin-top:2px }
 .s-age { font-size:.62rem; color:var(--sub); margin-top:8px; border-top:1px solid var(--border); padding-top:6px }
@@ -93,7 +83,10 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
     <div class="date" id="hdate"></div>
   </div>
   <div class="actions">
-    <button class="refresh-btn" id="refresh-btn" title="News neu laden">🔄 Aktualisieren</button>
+    <div>
+      <button class="refresh-btn" id="refresh-btn" title="News-Stand anzeigen">🔄 Aktualisieren</button>
+      <div class="refresh-toast" id="refresh-toast"></div>
+    </div>
   </div>
   <div class="meta" id="hmeta">Stand: wird geladen …</div>
 </div>
@@ -108,14 +101,14 @@ const NEWS_DATA = {
   "economy": {
     "title": "🇩🇪 Deutsche Wirtschaft und Mittelstand",
     "items": [
-      {"date":"2026-05-11","text": "Deutsche IT-Branche verhalten optimistisch für 2026: Umsatz soll auf 245 Mrd. Euro wachsen (+4,4%) – Software legt um 10,2% zu", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/konjunktur-deutsche-it-branche-blickt-verhalten-optimistisch-auf-2026/100194104.html"},
-      {"date":"2026-05-10","text": "DIHK hebt Wachstumsprognose für 2026 an: KI-Nutzung beschleunigt Prozesse in 45% der Unternehmen – Bitkom meldet Fortschritte trotz Hürden", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/konjunktur-dihk-hebt-wachstumsprognose-fuer-2026-an/100201006.html"},
-      {"date":"2026-05-09","text": "OECD sieht deutsche Wirtschaft ab 2026 langsam im Aufwind – hohe Standortkosten, schwache Inlandsnachfrage und US-Zollpolitik als Bremsklötze", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/politik/konjunktur/konjunktur-oecd-sieht-deutsche-wirtschaft-ab-2026-langsam-im-aufwind/100180153.html"},
-      {"date":"2026-05-08","text": "IW senkt Konjunkturprognose für 2026 deutlich: Aufschwung kaschiert Strukturprobleme – Fachkräftemangel und Bürokratie bremsen Digitalisierung", "source": "wiwo.de", "url": "https://www.wiwo.de/politik/konjunktur/wirtschaftswachstum-aufschwung-kaschiert-strukturprobleme-in-deutschland/100153118.html"},
-      {"date":"2026-05-07","text": "Industrie investiert wieder mehr in Deutschland: Mittelständler und Familienunternehmen setzen auf Modernisierung und digitale Transformation", "source": "handelsblatt.com", "url": "https://www.handelsblatt.com/unternehmen/mittelstand/familienunternehmer/industrie-diese-unternehmen-investieren-wieder-mehr-in-deutschland/100135573.html"},
-      {"date":"2026-05-06","text": "Google News: Digitalkonzerne setzen auf verstärkte Investitionen in Arbeitsplätze in Deutschland", "source": "googlenews.de", "url": "https://news.google.com/de"},
-      {"date":"2026-05-05","text": "SPIEGEL: Mittelstand transformiert: Wie Familienbetriebe die Digitalisierung meistern", "source": "spiegel.de", "url": "https://www.spiegel.de/wirtschaft"},
-      {"date":"2026-05-04","text": "DPA: Arbeitsmarkt stabilisiert sich trotz Konjunkturflaute – Fachkräfte in Tech-Branchen stark gefragt", "source": "dpa.de", "url": "https://www.dpa.de"}
+      {"date":"2026-05-11","text":"Deutsche IT-Branche verhalten optimistisch für 2026: Umsatz soll auf 245 Mrd. Euro wachsen (+4,4%) – Software legt um 10,2% zu","source":"wiwo.de","url":"https://www.wiwo.de/politik/konjunktur/konjunktur-deutsche-it-branche-blickt-verhalten-optimistisch-auf-2026/100194104.html"},
+      {"date":"2026-05-10","text":"DIHK hebt Wachstumsprognose für 2026 an: KI-Nutzung beschleunigt Prozesse in 45% der Unternehmen – Bitkom meldet Fortschritte trotz Hürden","source":"wiwo.de","url":"https://www.wiwo.de/politik/konjunktur/konjunktur-dihk-hebt-wachstumsprognose-fuer-2026-an/100201006.html"},
+      {"date":"2026-05-09","text":"OECD sieht deutsche Wirtschaft ab 2026 langsam im Aufwind – hohe Standortkosten, schwache Inlandsnachfrage und US-Zollpolitik als Bremsklötze","source":"handelsblatt.com","url":"https://www.handelsblatt.com/politik/konjunktur/konjunktur-oecd-sieht-deutsche-wirtschaft-ab-2026-langsam-im-aufwind/100180153.html"},
+      {"date":"2026-05-08","text":"IW senkt Konjunkturprognose für 2026 deutlich: Aufschwung kaschiert Strukturprobleme – Fachkräftemangel und Bürokratie bremsen Digitalisierung","source":"wiwo.de","url":"https://www.wiwo.de/politik/konjunktur/wirtschaftswachstum-aufschwung-kaschiert-strukturprobleme-in-deutschland/100153118.html"},
+      {"date":"2026-05-07","text":"Industrie investiert wieder mehr in Deutschland: Mittelständler und Familienunternehmen setzen auf Modernisierung und digitale Transformation","source":"handelsblatt.com","url":"https://www.handelsblatt.com/unternehmen/mittelstand/familienunternehmer/industrie-diese-unternehmen-investieren-wieder-mehr-in-deutschland/100135573.html"},
+      {"date":"2026-05-06","text":"Google News: Digitalkonzerne setzen auf verstärkte Investitionen in Arbeitsplätze in Deutschland","source":"googlenews.de","url":"https://news.google.com/de"},
+      {"date":"2026-05-05","text":"SPIEGEL: Mittelstand transformiert: Wie Familienbetriebe die Digitalisierung meistern","source":"spiegel.de","url":"https://www.spiegel.de/wirtschaft"},
+      {"date":"2026-05-04","text":"DPA: Arbeitsmarkt stabilisiert sich trotz Konjunkturflaute – Fachkräfte in Tech-Branchen stark gefragt","source":"dpa.de","url":"https://www.dpa.de"}
     ]
   },
   "technology": {
@@ -125,59 +118,59 @@ const NEWS_DATA = {
         "key": "ai",
         "title": "🤖 KI & Modelle",
         "items": [
-          {"date":"2026-05-11","text": "KI-Barometer 2026: Jeder vierte Betrieb nutzt KI aktiv – doch die meisten Unternehmen scheitern bei der Umsetzung aus strukturellen Gründen", "source": "heise.de", "url": "https://www.heise.de/news/KI-Barometer-2026-Wie-Unternehmen-KI-heute-tatsaechlich-einsetzen-11266671.html"},
-          {"date":"2026-05-10","text": "Stanford AI Index 2026: KI skaliert schneller als die Welt sich anpassen kann – Produktivitätsgewinne von 14–72% in verschiedenen Sektoren belegt", "source": "the-decoder.de", "url": "https://the-decoder.de/stanfords-ai-index-2026-ki-skaliert-schneller-als-die-welt-sich-anpassen-kann/"},
-          {"date":"2026-05-10","text": "Cisco AI Summit 2026: Industrie einigt sich – 2026 wird das Jahr der produktionsreifen KI; Fokus verschiebt sich auf Skalierungs-Infrastruktur", "source": "heise.de", "url": "https://www.heise.de/en/news/Cisco-AI-Summit-After-2025-s-AI-breakthrough-comes-2026-s-11170678.html"},
-          {"date":"2026-05-09","text": "Meta bringt neues KI-Modell: Milliarden-Investitionen in Superintelligence Labs – Auswirkungen für Anleger und Wettbewerb mit OpenAI", "source": "businessinsider.de", "url": "https://www.businessinsider.de/wirtschaft/meta-bringt-neues-ki-modell-was-das-fuer-anleger-bedeutet/"},
-          {"date":"2026-05-08","text": "Q1-2026-Update der großen LLMs: Chancen, Risiken und Konsequenzen für Unternehmen – Überblick über GPT-5.5, Claude, Gemini und Grok", "source": "boddenberg.de", "url": "https://www.boddenberg.de/q1-2026-update-der-grossen-llms-chancen-risiken-konsequenzen-fuer-unternehmen/"},
-          {"date":"2026-05-07","text": "Gartner Technologieausblick 2026: KI dominiert alle strategischen Trends – Agentik und multimodale Systeme im Mittelpunkt", "source": "heise.de", "url": "https://www.heise.de/en/news/AI-Dominates-Gartner-s-Technology-Outlook-for-2026-10811245.html"}
+          {"date":"2026-05-11","text":"KI-Barometer 2026: Jeder vierte Betrieb nutzt KI aktiv – doch die meisten Unternehmen scheitern bei der Umsetzung aus strukturellen Gründen","source":"heise.de","url":"https://www.heise.de/news/KI-Barometer-2026-Wie-Unternehmen-KI-heute-tatsaechlich-einsetzen-11266671.html"},
+          {"date":"2026-05-10","text":"Stanford AI Index 2026: KI skaliert schneller als die Welt sich anpassen kann – Produktivitätsgewinne von 14–72% in verschiedenen Sektoren belegt","source":"the-decoder.de","url":"https://the-decoder.de/stanfords-ai-index-2026-ki-skaliert-schneller-als-die-welt-sich-anpassen-kann/"},
+          {"date":"2026-05-10","text":"Cisco AI Summit 2026: Industrie einigt sich – 2026 wird das Jahr der produktionsreifen KI; Fokus verschiebt sich auf Skalierungs-Infrastruktur","source":"heise.de","url":"https://www.heise.de/en/news/Cisco-AI-Summit-After-2025-s-AI-breakthrough-comes-2026-s-11170678.html"},
+          {"date":"2026-05-09","text":"Meta bringt neues KI-Modell: Milliarden-Investitionen in Superintelligence Labs – Auswirkungen für Anleger und Wettbewerb mit OpenAI","source":"businessinsider.de","url":"https://www.businessinsider.de/wirtschaft/meta-bringt-neues-ki-modell-was-das-fuer-anleger-bedeutet/"},
+          {"date":"2026-05-08","text":"Q1-2026-Update der großen LLMs: Chancen, Risiken und Konsequenzen für Unternehmen – Überblick über GPT-5.5, Claude, Gemini und Grok","source":"boddenberg.de","url":"https://www.boddenberg.de/q1-2026-update-der-grossen-llms-chancen-risiken-konsequenzen-fuer-unternehmen/"},
+          {"date":"2026-05-07","text":"Gartner Technologieausblick 2026: KI dominiert alle strategischen Trends – Agentik und multimodale Systeme im Mittelpunkt","source":"heise.de","url":"https://www.heise.de/en/news/AI-Dominates-Gartner-s-Technology-Outlook-for-2026-10811245.html"}
         ]
       },
       {
         "key": "dc",
         "title": "🏢 Datacenter & Infrastruktur",
         "items": [
-          {"date":"2026-05-11","text": "HPE erweitert KI-Infrastruktur von Enterprise bis Exascale: Neue Systeme mit RTX-PRO-GPUs, Blackwell/Rubin-Architektur und Direct Liquid Cooling", "source": "computerweekly.com", "url": "https://www.computerweekly.com/de/news/366640477/HPE-erweitert-KI-Infrastruktur-von-Enterprise-bis-Exascale"},
-          {"date":"2026-05-10","text": "Dell AI-Server-Umsatz springt stark an, während PowerScale 'Project Lightning' Storage-Sparte auf sich warten lässt", "source": "computerweekly.com", "url": "https://www.computerweekly.com/news/366630228/Dell-AI-server-revenues-leap-but-storage-waits-on-Project-Lightning"},
-          {"date":"2026-05-09","text": "SuperMicro überholt Lenovo und HPE: Q4 2025 mit +134% Wachstum auf 11,7 Mrd. Dollar – AMD treibt On-Premise-KI voran", "source": "computerweekly.com", "url": "https://www.computerweekly.com/news/366640375/SuperMicro-takes-on-server-leaders-as-AMD-pushes-on-premise-AI"},
-          {"date":"2026-05-08","text": "NVIDIA packt 256 Vera CPUs in ein einziges flüssigkeitsgekühltes Rack – verfügbar bei Dell, Lenovo, HPE und anderen OEMs", "source": "theregister.com", "url": "https://www.theregister.com/2026/03/16/nvidia_vera_cpu_rack/"},
-          {"date":"2026-05-07","text": "Nutanix bringt Kubernetes auf Bare Metal – Kooperation mit NetApp beinhaltet VM-Migrations-Tools für NetApp Storage", "source": "theregister.com", "url": "https://www.theregister.com/2026/04/07/nutanix_bare_metal_k8s/"}
+          {"date":"2026-05-11","text":"HPE erweitert KI-Infrastruktur von Enterprise bis Exascale: Neue Systeme mit RTX-PRO-GPUs, Blackwell/Rubin-Architektur und Direct Liquid Cooling","source":"computerweekly.com","url":"https://www.computerweekly.com/de/news/366640477/HPE-erweitert-KI-Infrastruktur-von-Enterprise-bis-Exascale"},
+          {"date":"2026-05-10","text":"Dell AI-Server-Umsatz springt stark an, während PowerScale 'Project Lightning' Storage-Sparte auf sich warten lässt","source":"computerweekly.com","url":"https://www.computerweekly.com/news/366630228/Dell-AI-server-revenues-leap-but-storage-waits-on-Project-Lightning"},
+          {"date":"2026-05-09","text":"SuperMicro überholt Lenovo und HPE: Q4 2025 mit +134% Wachstum auf 11,7 Mrd. Dollar – AMD treibt On-Premise-KI voran","source":"computerweekly.com","url":"https://www.computerweekly.com/news/366640375/SuperMicro-takes-on-server-leaders-as-AMD-pushes-on-premise-AI"},
+          {"date":"2026-05-08","text":"NVIDIA packt 256 Vera CPUs in ein einziges flüssigkeitsgekühltes Rack – verfügbar bei Dell, Lenovo, HPE und anderen OEMs","source":"theregister.com","url":"https://www.theregister.com/2026/03/16/nvidia_vera_cpu_rack/"},
+          {"date":"2026-05-07","text":"Nutanix bringt Kubernetes auf Bare Metal – Kooperation mit NetApp beinhaltet VM-Migrations-Tools für NetApp Storage","source":"theregister.com","url":"https://www.theregister.com/2026/04/07/nutanix_bare_metal_k8s/"}
         ]
       },
       {
         "key": "sec",
         "title": "🔒 Security & Networking",
         "items": [
-          {"date":"2026-05-11","text": "Cisco stellt neue Zero-Trust Security Platform vor: Integration von KI-gestützter Bedrohungserkennung für Enterprise-Netzwerke", "source": "heise.de", "url": "https://www.heise.de/news/Cisco-Zero-Trust-Security-2026"},
-          {"date":"2026-05-10","text": "Palo Alto Networks kauft KI-Sicherheitsstart-up für 180 Mio. Dollar – Fokus auf API-Security und Cloud-Schutz", "source": "computerwoche.de", "url": "https://www.computerwoche.de/news/palo-alto-akquisition"},
-          {"date":"2026-05-09","text": "Juniper Networks erweitert Switching-Portfolio: Neue QFX-Serie mit Hardware-beschleunigter Verschlüsselung", "source": "theregister.com", "url": "https://www.theregister.com/2026/05/juniper-qfx"},
-          {"date":"2026-05-08","text": "Fortinet meldet 45% Anstieg bei Cloud-basierten Firewalls – SMB setzt verstärkt auf Managed Security Services", "source": "channelpartner.de", "url": "https://www.channelpartner.de/fortinet-2026"},
-          {"date":"2026-05-07","text": "Aruba Networks: EdgeConnect SD-WAN jetzt mit KI-gestütztem Performance Management für Hybrid Work", "source": "computerweekly.com", "url": "https://www.computerweekly.com/aruba-edgeconnect"},
-          {"date":"2026-05-06","text": "BSI warnt: Ransomware-Anschläge auf deutsche Infrastruktur nehmen zu – Kritische Schwachstellen in VPN-Lösungen gefunden", "source": "heise.de", "url": "https://www.heise.de/news/bsi-ransomware-2026"}
+          {"date":"2026-05-11","text":"Cisco stellt neue Zero-Trust Security Platform vor: Integration von KI-gestützter Bedrohungserkennung für Enterprise-Netzwerke","source":"heise.de","url":"https://www.heise.de/news/Cisco-Zero-Trust-Security-2026"},
+          {"date":"2026-05-10","text":"Palo Alto Networks kauft KI-Sicherheitsstart-up für 180 Mio. Dollar – Fokus auf API-Security und Cloud-Schutz","source":"computerwoche.de","url":"https://www.computerwoche.de/news/palo-alto-akquisition"},
+          {"date":"2026-05-09","text":"Juniper Networks erweitert Switching-Portfolio: Neue QFX-Serie mit Hardware-beschleunigter Verschlüsselung","source":"theregister.com","url":"https://www.theregister.com/2026/05/juniper-qfx"},
+          {"date":"2026-05-08","text":"Fortinet meldet 45% Anstieg bei Cloud-basierten Firewalls – SMB setzt verstärkt auf Managed Security Services","source":"channelpartner.de","url":"https://www.channelpartner.de/fortinet-2026"},
+          {"date":"2026-05-07","text":"Aruba Networks: EdgeConnect SD-WAN jetzt mit KI-gestütztem Performance Management für Hybrid Work","source":"computerweekly.com","url":"https://www.computerweekly.com/aruba-edgeconnect"},
+          {"date":"2026-05-06","text":"BSI warnt: Ransomware-Anschläge auf deutsche Infrastruktur nehmen zu – Kritische Schwachstellen in VPN-Lösungen gefunden","source":"heise.de","url":"https://www.heise.de/news/bsi-ransomware-2026"}
         ]
       },
       {
         "key": "modernwork",
         "title": "💼 Modern Work",
         "items": [
-          {"date":"2026-05-11","text": "Apple präsentiert neue iPad Pro Linie mit M4-Chip: Optimiert für Enterprise Workplace und Hybrid Work", "source": "appleinsider.de", "url": "https://appleinsider.de/artikel/apple-ipad-pro-2026"},
-          {"date":"2026-05-10","text": "Microsoft und Steelcase kooperieren: Intelligente Konferenzräume mit Copilot Pro für smarte Raumverwaltung", "source": "microsoft.com", "url": "https://microsoft.com/workplace"},
-          {"date":"2026-05-09","text": "Cisco Webex Space erweitert Features: KI-gestützte Meeting-Planung und automatische Raumbuchung für Hybrid Worker", "source": "cisco.com", "url": "https://www.cisco.com/c/de_de/products/collaboration/webex/index.html"},
-          {"date":"2026-05-08","text": "Henkel und Vitra präsentieren ergonomische Arbeitsplatz-Innovationen: Höhenverstellbare Tische mit Health Tracking", "source": "möbel-industrie.de", "url": "https://moebel-industrie.de"},
-          {"date":"2026-05-07","text": "Slack und Zoom integrieren AI Companion: Intelligente Assistenten für virtuelle Meetings und Workspace Management", "source": "slack.com", "url": "https://slack.com/de/features"},
-          {"date":"2026-05-06","text": "Herman Miller und Google Cloud: Workplace Analytics nutzt KI um Büroeffizienz um 23% zu steigern", "source": "hermanmiller.com", "url": "https://www.hermanmiller.com/"}
+          {"date":"2026-05-11","text":"Apple präsentiert neue iPad Pro Linie mit M4-Chip: Optimiert für Enterprise Workplace und Hybrid Work","source":"appleinsider.de","url":"https://appleinsider.de/artikel/apple-ipad-pro-2026"},
+          {"date":"2026-05-10","text":"Microsoft und Steelcase kooperieren: Intelligente Konferenzräume mit Copilot Pro für smarte Raumverwaltung","source":"microsoft.com","url":"https://microsoft.com/workplace"},
+          {"date":"2026-05-09","text":"Cisco Webex Space erweitert Features: KI-gestützte Meeting-Planung und automatische Raumbuchung für Hybrid Worker","source":"cisco.com","url":"https://www.cisco.com/c/de_de/products/collaboration/webex/index.html"},
+          {"date":"2026-05-08","text":"Henkel und Vitra präsentieren ergonomische Arbeitsplatz-Innovationen: Höhenverstellbare Tische mit Health Tracking","source":"möbel-industrie.de","url":"https://moebel-industrie.de"},
+          {"date":"2026-05-07","text":"Slack und Zoom integrieren AI Companion: Intelligente Assistenten für virtuelle Meetings und Workspace Management","source":"slack.com","url":"https://slack.com/de/features"},
+          {"date":"2026-05-06","text":"Herman Miller und Google Cloud: Workplace Analytics nutzt KI um Büroeffizienz um 23% zu steigern","source":"hermanmiller.com","url":"https://www.hermanmiller.com/"}
         ]
       },
       {
         "key": "microsoft",
         "title": "💙 Microsoft & Azure",
         "items": [
-          {"date":"2026-05-11","text": "Microsoft Azure Local jetzt allgemein verfügbar: On-Premises KI-Computing mit Azure Stack HCI für Unternehmen ohne Public Cloud", "source": "heise.de", "url": "https://www.heise.de/news/Microsoft-Azure-Local-2026"},
-          {"date":"2026-05-10","text": "Entra ID Integration in Microsoft 365: Neue Zero-Trust Sicherheitsfeatures mit KI-gestütztem Anomalie-Detection", "source": "microsoft.com", "url": "https://microsoft.com/entra"},
-          {"date":"2026-05-09","text": "Azure Subscriptions neu strukturiert: Kostenersparnis für Unternehmen durch flexibles Billing und Reserved Instances", "source": "computerwoche.de", "url": "https://www.computerwoche.de/news/azure-2026"},
-          {"date":"2026-05-08","text": "Microsoft 365 Copilot Pro für SMB: KI-Features in Word, Excel, PowerPoint jetzt auch für kleine Unternehmen verfügbar", "source": "thurrott.com", "url": "https://www.thurrott.com/microsoft-365-copilot-2026"},
-          {"date":"2026-05-07","text": "Azure DevOps erhält KI-Assistent: Automatische Test-Generierung und Performance-Optimierung für CI/CD Pipelines", "source": "microsoft.com", "url": "https://microsoft.com/devops"},
-          {"date":"2026-05-06","text": "Microsoft Fabric Analytics erweitert: Verbindung von On-Premises Daten mit Cloud AI – keine ETL-Tools mehr nötig", "source": "heise.de", "url": "https://www.heise.de/news/Microsoft-Fabric-2026"}
+          {"date":"2026-05-11","text":"Microsoft Azure Local jetzt allgemein verfügbar: On-Premises KI-Computing mit Azure Stack HCI für Unternehmen ohne Public Cloud","source":"heise.de","url":"https://www.heise.de/news/Microsoft-Azure-Local-2026"},
+          {"date":"2026-05-10","text":"Entra ID Integration in Microsoft 365: Neue Zero-Trust Sicherheitsfeatures mit KI-gestütztem Anomalie-Detection","source":"microsoft.com","url":"https://microsoft.com/entra"},
+          {"date":"2026-05-09","text":"Azure Subscriptions neu strukturiert: Kostenersparnis für Unternehmen durch flexibles Billing und Reserved Instances","source":"computerwoche.de","url":"https://www.computerwoche.de/news/azure-2026"},
+          {"date":"2026-05-08","text":"Microsoft 365 Copilot Pro für SMB: KI-Features in Word, Excel, PowerPoint jetzt auch für kleine Unternehmen verfügbar","source":"thurrott.com","url":"https://www.thurrott.com/microsoft-365-copilot-2026"},
+          {"date":"2026-05-07","text":"Azure DevOps erhält KI-Assistent: Automatische Test-Generierung und Performance-Optimierung für CI/CD Pipelines","source":"microsoft.com","url":"https://microsoft.com/devops"},
+          {"date":"2026-05-06","text":"Microsoft Fabric Analytics erweitert: Verbindung von On-Premises Daten mit Cloud AI – keine ETL-Tools mehr nötig","source":"heise.de","url":"https://www.heise.de/news/Microsoft-Fabric-2026"}
         ]
       }
     ]
@@ -188,28 +181,33 @@ const NEWS_DATA = {
 
 <!-- ═══════════════════════════════════════════════════════════════
      STOCK DATA – täglich 06:00 Uhr via WebSearch aktualisiert
-     Quellen: boerse.de, finanzen.net, finance.yahoo.com
+     STOCK_HISTORY – optional: Array mit 30 Schlusskursen je Ticker
      ═══════════════════════════════════════════════════════════════ -->
 <!-- STOCK_DATA_START -->
 <script>
 const STOCK_DATA = {
   "generated": "2026-05-12",
   "stocks": [
-    { "sym": "CAN",  "name": "CANCOM SE           ", "price": "25.45     ", "currency": "EUR", "change_pct": 2.83, "exchange": "XETRA"  },
-    { "sym": "CCC",  "name": "Computacenter       ", "price": "28.30     ", "currency": "GBP", "change_pct": 1.42, "exchange": "LSE"  },
-    { "sym": "BRL",  "name": "Bechtle             ", "price": "52.20     ", "currency": "EUR", "change_pct": 0.95, "exchange": "XETRA"  },
-    { "sym": "GDAXI",  "name": "DAX                 ", "price": "18642.50  ", "currency": "EUR", "change_pct": 0.73, "exchange": "XETRA"  },
-    { "sym": "SDAXI",  "name": "SDAX                ", "price": "13284.75  ", "currency": "EUR", "change_pct": 1.12, "exchange": "XETRA"  },
-    { "sym": "CDAX",  "name": "TechDAX             ", "price": "3612.40   ", "currency": "EUR", "change_pct": 2.05, "exchange": "XETRA"  }
+    { "sym": "CAN",   "name": "CANCOM SE",     "price": "25.45",  "currency": "EUR", "change_pct": 2.83, "exchange": "XETRA" },
+    { "sym": "CCC",   "name": "Computacenter", "price": "28.30",  "currency": "GBP", "change_pct": 1.42, "exchange": "LSE"   },
+    { "sym": "BRL",   "name": "Bechtle",       "price": "52.20",  "currency": "EUR", "change_pct": 0.95, "exchange": "XETRA" },
+    { "sym": "GDAXI", "name": "DAX",           "price": "18642.50","currency": "EUR", "change_pct": 0.73, "exchange": "XETRA" },
+    { "sym": "SDAXI", "name": "SDAX",          "price": "13284.75","currency": "EUR", "change_pct": 1.12, "exchange": "XETRA" },
+    { "sym": "CDAX",  "name": "TechDAX",       "price": "3612.40", "currency": "EUR", "change_pct": 2.05, "exchange": "XETRA" }
   ]
 };
+
+// FIX: STOCK_HISTORY für optionale historische Kursdaten (30 Tage)
+// Format: { "SYM": [kurs1, kurs2, ..., kurs30] }
+// Wird vom scheduled task befüllt sofern verfügbar, sonst leer gelassen
+const STOCK_HISTORY = {};
 </script>
 <!-- STOCK_DATA_END -->
 
 <!-- ═══════════════════════════════════════════════════════════════  NEWS SECTION  ═══════ -->
 <div class="sec">📰 Nachrichten-Briefing</div>
 
-<!-- Deutsche Wirtschaft Section -->
+<!-- Deutsche Wirtschaft -->
 <div class="news-section-full">
   <div class="card-title" id="title-eco"></div>
   <div id="body-eco"></div>
@@ -217,11 +215,9 @@ const STOCK_DATA = {
 
 <div class="section-divider"></div>
 
-<!-- Technologie Section -->
+<!-- Technologie Kategorien -->
 <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:var(--shadow)">
   <div style="font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); margin-bottom:16px">💻 Technologische Kategorien</div>
-  
-  <!-- Tech Subcategories -->
   <div id="tech-categories"></div>
 </div>
 
@@ -230,156 +226,117 @@ const STOCK_DATA = {
 <div class="stocks-grid" id="sgrid"></div>
 
 <script>
-// ── Date header ────────────────────────────────────────────────────────
+// ── Datum ──────────────────────────────────────────────────────────────
 const NOW = new Date();
 document.getElementById('hdate').textContent = NOW.toLocaleDateString('de-DE',
   { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-// ── Format date helper ────────────────────────────────────────────────────
+// ── Datum-Hilfsfunktion ────────────────────────────────────────────────
 function formatNewsDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
   const today = NOW.toISOString().slice(0,10);
   if (dateStr === today) return '📅 heute';
-  const yesterday = new Date(NOW);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (dateStr === yesterday.toISOString().slice(0,10)) return '📅 gestern';
+  const yest = new Date(NOW);
+  yest.setDate(yest.getDate() - 1);
+  if (dateStr === yest.toISOString().slice(0,10)) return '📅 gestern';
+  const d = new Date(dateStr + 'T00:00:00');
   return '📅 ' + d.toLocaleDateString('de-DE', { month:'short', day:'numeric' });
 }
 
-// ── Render economy section (full width) ────────────────────────────────
+// ── News-Item HTML ─────────────────────────────────────────────────────
+function newsItemHTML(it) {
+  return `<div class="news-item">
+    <a href="${it.url}" target="_blank" rel="noopener">${it.text}</a>
+    <div class="src">↗ ${it.source}</div>
+    <div class="date-tag">${formatNewsDate(it.date)}</div>
+  </div>`;
+}
+
+// ── Deutsche Wirtschaft rendern ────────────────────────────────────────
 function renderEconomyNews() {
   const econ = NEWS_DATA.economy;
   document.getElementById('title-eco').textContent = econ.title;
-  
-  const html = `
-    <div class="news-grid">
-      ${econ.items.map(it =>
-        `<div class="news-item">
-          <a href="${it.url}" target="_blank" rel="noopener">${it.text}</a>
-          <div class="src">↗ ${it.source}</div>
-          <div class="date">${formatNewsDate(it.date)}</div>
-        </div>`
-      ).join('')}
-    </div>
-    <div class="news-updated" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:.63rem; color:var(--sub)">
-      🔄 Stand ${NEWS_DATA.generated} · automatisch via WebSearch
-    </div>
-  `;
-  
-  document.getElementById('body-eco').innerHTML = html;
+  document.getElementById('body-eco').innerHTML = `
+    <div class="news-grid">${econ.items.map(newsItemHTML).join('')}</div>
+    <div class="news-updated">🔄 Stand ${NEWS_DATA.generated} · automatisch via WebSearch</div>`;
 }
 
-// ── Render technology subcategories ────────────────────────────────────
+// ── Technologie-Kategorien rendern ─────────────────────────────────────
 function renderTechnologyNews() {
-  const tech = NEWS_DATA.technology;
-  const container = document.getElementById('tech-categories');
-  
-  container.innerHTML = `
+  const subs = NEWS_DATA.technology.subcategories;
+  document.getElementById('tech-categories').innerHTML = `
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px">
-      ${tech.subcategories.map(sub =>
-        `<div>
+      ${subs.map(sub => `
+        <div>
           <div style="font-size:.72rem; font-weight:700; color:var(--accent); margin-bottom:12px">${sub.title}</div>
-          <div class="news-grid" style="grid-template-columns:1fr; gap:8px">
-            ${sub.items.map(it =>
-              `<div class="news-item">
-                <a href="${it.url}" target="_blank" rel="noopener">${it.text}</a>
-                <div class="src">↗ ${it.source}</div>
-                <div class="date">${formatNewsDate(it.date)}</div>
-              </div>`
-            ).join('')}
+          <div style="display:flex; flex-direction:column; gap:8px">
+            ${sub.items.map(newsItemHTML).join('')}
           </div>
-        </div>`
-      ).join('')}
+        </div>`).join('')}
     </div>
-    <div class="news-updated" style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border); font-size:.63rem; color:var(--sub)">
+    <div class="news-updated" style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border)">
       🔄 Stand ${NEWS_DATA.generated} · automatisch via WebSearch
-    </div>
-  `;
+    </div>`;
 }
 
-// ── Refresh news ──────────────────────────────────────────────────────
-async function refreshNews() {
-  const btn = document.getElementById('refresh-btn');
-  btn.classList.add('loading');
-  btn.textContent = '⏳ Lädt...';
-  
-  try {
-    const response = await fetch('/api/refresh-news', { method: 'POST' });
-    if (response.ok) {
-      const data = await response.json();
-      Object.assign(NEWS_DATA, data);
-      renderEconomyNews();
-      renderTechnologyNews();
-    }
-  } catch (e) {
-    console.log('Offline: Lokale News angezeigt');
+// ── Refresh-Button: zeigt Datenstand, kein API-Call ────────────────────
+// (Aktualisierung erfolgt täglich 06:00 Uhr via Cowork scheduled task)
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  const toast = document.getElementById('refresh-toast');
+  const today = NOW.toISOString().slice(0,10);
+  if (NEWS_DATA.generated === today) {
+    toast.textContent = '✅ Daten sind aktuell (Stand: heute)';
+  } else {
+    toast.textContent = `ℹ️ Stand ${NEWS_DATA.generated} – nächste Aktualisierung morgen 06:00 Uhr`;
   }
-  
-  btn.classList.remove('loading');
-  btn.textContent = '🔄 Aktualisieren';
-}
+  setTimeout(() => { toast.textContent = ''; }, 4000);
+});
 
-// Initial render
+// ── Initialer Render ───────────────────────────────────────────────────
 renderEconomyNews();
 renderTechnologyNews();
 
-// ── Render stocks ──────────────────────────────────────────────────────
+// ── Börsen rendern ─────────────────────────────────────────────────────
 (function renderStocks() {
   const grid  = document.getElementById('sgrid');
   const today = NOW.toISOString().slice(0,10);
   const age   = STOCK_DATA.generated === today ? 'heute' : 'Stand ' + STOCK_DATA.generated;
 
   for (const s of STOCK_DATA.stocks) {
-    const chg    = parseFloat(s.change_pct);
-    const isPos  = chg > 0.05;
-    const isNeg  = chg < -0.05;
-    const cls    = isPos ? 'pos' : isNeg ? 'neg' : 'flat';
-    const arrow  = isPos ? '▲' : isNeg ? '▼' : '–';
-    const color  = isPos ? '#3fb950' : isNeg ? '#f85149' : '#8b949e';
-    const cid    = 'cv_' + s.sym;
+    const chg   = parseFloat(s.change_pct);
+    const isPos = chg >  0.05;
+    const isNeg = chg < -0.05;
+    const cls   = isPos ? 'pos' : isNeg ? 'neg' : 'flat';
+    const arrow = isPos ? '▲' : isNeg ? '▼' : '–';
+    const color = isPos ? '#3fb950' : isNeg ? '#f85149' : '#8b949e';
+    const cid   = 'cv_' + s.sym;
 
     const card = document.createElement('div');
     card.className = 'stock-card';
     card.innerHTML = `
       <div class="s-sym">${s.sym} <span style="font-weight:400;opacity:.6">${s.exchange}</span></div>
-      <div class="s-name">${s.name}</div>
-      <div class="s-price">${s.price}<span class="s-curr">${s.currency}</span></div>
-      <div class="s-chg ${cls}"><span class="arrow">${arrow}</span>${Math.abs(chg).toFixed(2)}% heute</div>
+      <div class="s-name">${s.name.trim()}</div>
+      <div class="s-price">${s.price.toString().trim()}<span class="s-curr">${s.currency}</span></div>
+      <div class="s-chg ${cls}"><span>${arrow}</span>${Math.abs(chg).toFixed(2)}% heute</div>
       <div class="chart-box"><canvas id="${cid}"></canvas></div>
       <div class="s-age">🔄 ${age} · WebSearch</div>`;
     grid.appendChild(card);
 
-    // Decorative trend chart colored by direction
     requestAnimationFrame(() => {
       const el = document.getElementById(cid);
       if (!el) return;
-      
-      // Use real historical data if available, otherwise generate realistic trend
-      let pts;
-      if (STOCK_HISTORY && STOCK_HISTORY[s.sym]) {
-        pts = STOCK_HISTORY[s.sym];
-      } else {
-        // Fallback: generate realistic trend
-        const len = 30;
-        const drift = chg * 0.08;
-        pts = Array.from({ length: len }, (_, i) =>
-          50 + drift * i + 5 * Math.sin(i * 0.6 + (s.sym.charCodeAt(0) % 5)) + (Math.random() - 0.5) * 1.2
-        );
-      }
-      
-      // Normalize prices to 0-100 range for consistent scaling
-      const minPrice = Math.min(...pts);
-      const maxPrice = Math.max(...pts);
-      const range = maxPrice - minPrice || 1;
-      const normalizedPts = pts.map(p => ((p - minPrice) / range * 100));
-      
+      // Echte Historien-Daten nutzen falls vorhanden, sonst dekorative Trendlinie
+      let pts = (STOCK_HISTORY[s.sym] && STOCK_HISTORY[s.sym].length > 1)
+        ? STOCK_HISTORY[s.sym]
+        : Array.from({ length: 30 }, (_, i) =>
+            50 + chg * 0.08 * i + 5 * Math.sin(i * 0.6 + (s.sym.charCodeAt(0) % 5)) + (Math.random() - 0.5) * 1.2
+          );
+      // Normalisieren auf 0–100
+      const lo = Math.min(...pts), hi = Math.max(...pts), rng = hi - lo || 1;
+      pts = pts.map(p => (p - lo) / rng * 100);
       new Chart(el, {
         type: 'line',
-        data: {
-          labels: normalizedPts.map((_, i) => i),
-          datasets: [{ data: normalizedPts, borderColor: color, borderWidth: 1.5, fill: true,
-            backgroundColor: color + '18', pointRadius: 0, tension: 0.4 }]
-        },
+        data: { labels: pts.map((_,i)=>i), datasets: [{ data: pts, borderColor: color,
+          borderWidth: 1.5, fill: true, backgroundColor: color+'18', pointRadius: 0, tension: 0.4 }] },
         options: { responsive: true, maintainAspectRatio: false, animation: false,
           plugins: { legend: { display: false }, tooltip: { enabled: false } },
           scales: { x: { display: false }, y: { display: false } } }
@@ -387,9 +344,6 @@ renderTechnologyNews();
     });
   }
 })();
-
-// ── Refresh button event ───────────────────────────────────────────────
-document.getElementById('refresh-btn').addEventListener('click', refreshNews);
 
 // ── Meta footer ────────────────────────────────────────────────────────
 document.getElementById('hmeta').innerHTML =
